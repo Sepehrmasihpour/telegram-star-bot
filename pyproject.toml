@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "telegram-star-bot"
+version = "0.1.0"
+description = ""
+authors = ["sepehr masihpour"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+python-telegram-bot = "^22.5"
+pymongo = "^4.15.3"
+motor = "^3.7.1"
+python-dotenv = "^1.2.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
