@@ -26,7 +26,7 @@ async def get_webhook() -> Dict[str, Any]:
     https://core.telegram.org/bots/api#getwebhookinfo
     """
     url = _api("getWebhookInfo")
-    timeout = httpx.Timeout(connect=5.0, read=10.0)
+    timeout = httpx.Timeout(20.0, connect=5.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
         resp = await client.get(url)
         try:
