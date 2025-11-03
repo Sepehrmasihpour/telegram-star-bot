@@ -6,13 +6,11 @@ from enum import IntEnum, StrEnum
 from ipaddress import IPv4Address
 from typing import List
 
-import requests
 from pydantic import BaseModel, HttpUrl, FilePath, Field, PositiveInt
 from pydantic_settings import BaseSettings
-from requests.exceptions import RequestsWarning
 
 
-class SecurityWarning(RequestsWarning):
+class SecurityWarning(Warning):
     """Custom security warning."""
 
 
@@ -113,24 +111,6 @@ if settings.webhook and settings.webhook.scheme == "http":
     raise ValueError(
         "\n\nPre-configured webhook should be able to handle TLS1.2(+) HTTPS-traffic"
     )
-
-# TODO put this block in the main.py file and change the request instances to httpx
-# def probe_webhook_if_set():
-#     if not settings.webhook:
-#         return
-#     try:
-#         requests.get(
-#             str(settings.webhook),
-#             timeout=(2, 3),
-#             verify=str(settings.certificate) if settings.certificate else True
-#         )
-#     except Exception as e:
-#         logger.warning("Webhook probe failed (non-fatal): %s", e)
-
-# @app.on_event("startup")
-# async def _startup_checks():
-#     from models.config import probe_webhook_if_set
-#     probe_webhook_if_set()
 
 if not (settings.ngrok_token or settings.certificate):
     target = str(settings.webhook) if settings.webhook else "<no-webhook-configured>"
