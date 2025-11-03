@@ -26,8 +26,7 @@ async def get_webhook() -> Dict[str, Any]:
     https://core.telegram.org/bots/api#getwebhookinfo
     """
     url = _api("getWebhookInfo")
-    timeout = httpx.Timeout(20.0, connect=5.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient() as client:
         resp = await client.get(url)
         try:
             resp.raise_for_status()
@@ -48,7 +47,7 @@ async def delete_webhook(drop_pending: Optional[bool] = None) -> Dict[str, Any]:
     if drop_pending is not None:
         payload["drop_pending_updates"] = bool(drop_pending)
 
-    timeout = httpx.Timeout(connect=5.0, read=15.0)
+    timeout = httpx.Timeout(20.0, connect=5.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
         # Telegram supports JSON body for this endpoint
         resp = await client.post(url, json=payload or None)
@@ -88,8 +87,7 @@ async def set_webhook(webhook: HttpUrl) -> Dict[str, Any]:
     # With pure JSON body, we can send a plain list.
     updates_list = _allowed_updates()
 
-    timeout = httpx.Timeout(connect=5.0, read=20.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
+    async with httpx.AsyncClient() as client:
         if settings.certificate:
             # Multipart/form-data path: add fields as form-data and attach the file.
             payload_form = dict(base_payload)

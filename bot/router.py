@@ -40,8 +40,7 @@ async def lifespan(app: FastAPI):
       - close AsyncClient
     """
     # 1) shared HTTP client
-    timeout = httpx.Timeout(20.0, connect=5.0)
-    app.state.http = httpx.AsyncClient(timeout=timeout)
+    app.state.http = httpx.AsyncClient()
 
     # 2) get public URL
     public_url: Optional[str] = None
