@@ -1,95 +1,119 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal, Optional, Any, List
 
 
 class Chat(BaseModel):
-    """Base class for Message model."""
-
-    message_id: int
-    date: int
-
-    first_name: str
-    last_name: str
     id: int
-    type: str
-    username: str
+    type: Literal["private"]
+    username: Optional[str] = None
+    first_name: str
+    last_name: Optional[str] = None
+
+
+class User(BaseModel):
+    id: int
     is_bot: bool
-    language_code: str
+    first_name: str
+    username: Optional[str] = None
 
 
-# Below are the DataClass objects
-class Text(BaseModel):
-    """Nested class for Text model."""
+EntityType = Literal[
+    "mention",  # @username
+    "hashtag",  # #hashtag or #hashtag@chatusername
+    "cashtag",  # $USD or $USD@chatusername
+    "bot_command",  # /start@jobs_bot
+    "url",  # https://telegram.org
+    "email",  # do-not-reply@telegram.org
+    "phone_number",  # +1-212-555-0123
+    "bold",
+    "italic",
+    "underline",
+    "strikethrough",
+    "spoiler",
+    "blockquote",
+    "expandable_blockquote",
+    "code",  # monowidth string
+    "pre",  # monowidth block
+    "text_link",  # clickable text URL
+    "text_mention",  # for users without usernames
+    "custom_emoji",  # inline custom emoji stickers
+]
 
+
+class MessageEntity(BaseModel):
+    type: EntityType
+    offset: int
+    length: int
+    url: Optional[str] = None
+    user: Optional[User] = User
+
+
+class KeyboardButton(BaseModel):
     text: str
 
 
-class PhotoFragment(BaseModel):
-    """Nested class for PhotoFragment model."""
-
-    file_id: str
-    file_size: int
-    file_unique_id: str
-    height: int
-    width: int
-
-
-class Audio(BaseModel):
-    """Nested class for Audio model."""
-
-    duration: int
-    file_id: str
-    file_name: str
-    file_size: int
-    file_unique_id: str
-    mime_type: str
+class ReplyKeyboardMarkup(BaseModel):
+    keyboard: List[List[KeyboardButton]]
+    is_persistant: Optional[bool] = (
+        False  # * defaults to false if true the bot will always show the keyboard when the keyboard is not on
+    )
+    resize_keyboard: Optional[bool] = False  # * resize the keyboard to fit well
+    one_time_keyboard: Optional[bool] = (
+        False  # * the keyboard will hide when used with custom logic
+    )
+    input_field_placeholder: Optional[str] = False
 
 
-class Voice(BaseModel):
-    """Nested class for Voice model."""
-
-    duration: int
-    file_id: str
-    file_size: int
-    file_unique_id: str
-    mime_type: str
+class InlineKeyboardButton(BaseModel):
+    text: str
+    url: Optional[str] = None
+    callback_date: str
+    copy_text: Optional[str] = None
 
 
-class Document(BaseModel):
-    """Nested class for Document model."""
-
-    file_id: str
-    file_name: str
-    file_size: int
-    file_unique_id: str
-    mime_type: str
+class InlineKeyboardMarkup(BaseModel):
+    inline_keyboard: list[list[InlineKeyboardButton]]
 
 
-class Video(BaseModel):
-    """Nested class for Video model."""
+class CopyTextButton(BaseModel):
+    text: str
 
-    duration: int
-    file_id: str
-    file_name: str
-    file_size: int
-    file_unique_id: str
-    height: int
-    mime_type: str
-    width: int
 
-    class Thumb(BaseModel):
-        """Nested class for Thumb model."""
+class ForceReply(BaseModel):
+    input_field_placeholder: Optional[str] = str
 
-        file_id: str
-        file_size: int
-        file_unique_id: str
-        height: int
-        width: int
 
-    class Thumbnail(BaseModel):
-        """Nested class for Thumbnail model."""
+class BotCommand(BaseModel):
+    command: str
+    description: str
 
-        file_id: str
-        file_size: int
-        file_unique_id: str
-        height: int
-        width: int
+
+class Message(BaseModel):
+    message_id: int
+    _from: User = Field(alias="from")
+    date: int
+    chat: Chat
+    forward_origin: Any
+    #!forward_origin is intended for sending an error if not none the message is forwarded
+    #! if later we want to something different with forward messages we need to change this
+    text: str
+    entities: Optional[MessageEntity] = None
+    reply_markup: Optional[InlineKeyboardMarkup]
+
+
+class MaybeInaccessibleMessage(Message): ...
+
+
+class CallbackQuery(BaseModel):
+    id: str
+    _from: User = Field(alias="from")
+    message: Optional[MaybeInaccessibleMessage] = None
+    data: Optional[str] = None
+
+
+# * below are the data models for the api methdos
+
+
+class SendMessage(BaseModel):
+    chat_id: int
+    text: str
