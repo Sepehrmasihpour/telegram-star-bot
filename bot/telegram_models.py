@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Literal, Optional, Any, List
+from typing import Literal, Optional, Any, List, Union
 
 
 class Chat(BaseModel):
@@ -83,6 +83,10 @@ class ForceReply(BaseModel):
     input_field_placeholder: Optional[str] = str
 
 
+class ReplyKeyboardRemove(BaseModel):
+    remove_keyboard = True
+
+
 class BotCommand(BaseModel):
     command: str
     description: str
@@ -111,9 +115,24 @@ class CallbackQuery(BaseModel):
     data: Optional[str] = None
 
 
+class Update(BaseModel):
+    update_id: int
+    message: Optional[Message] = None
+    edited_message: Optional[Message] = None
+    callback_query: Optional[CallbackQuery] = None
+
+
 # * below are the data models for the api methdos
 
 
 class SendMessage(BaseModel):
     chat_id: int
     text: str
+    entities: Optional[List[MessageEntity]] = None
+    parse_mode: Optional[str] = None
+    protect_content: Optional[bool] = False
+    reply_markup: Optional[
+        Union[
+            InlineKeyboardMarkup, ReplyKeyboardMarkup, ReplyKeyboardRemove, ForceReply
+        ]
+    ] = None

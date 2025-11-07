@@ -60,6 +60,7 @@ class Settings(BaseSettings):
     # API specifics
     host: str = socket.gethostbyname("localhost")
     port: AllowedPorts = AllowedPorts.openssl
+    local_port: int
 
     debug: bool = False
 
