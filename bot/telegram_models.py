@@ -112,7 +112,7 @@ class MaybeInaccessibleMessage(Message): ...
 
 class CallbackQuery(BaseModel):
     id: str
-    _from: User = Field(alias="from")
+    from_: User = Field(alias="from")
     message: Optional[MaybeInaccessibleMessage] = None
     data: Optional[str] = None
 
