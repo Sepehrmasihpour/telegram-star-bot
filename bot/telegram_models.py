@@ -85,7 +85,7 @@ class ForceReply(BaseModel):
 
 
 class ReplyKeyboardRemove(BaseModel):
-    remove_keyboard = True
+    remove_keyboard: Literal[True]
 
 
 class BotCommand(BaseModel):
