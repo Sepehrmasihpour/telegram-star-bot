@@ -5,12 +5,10 @@ def serialize(payload: Dict) -> Tuple[str, int]:
     text = payload.get("text")
     user = payload.get("from")
     chat = payload.get("chat")
+    if user.get("is_bot"):
+        raise ValueError()
     if text == "/start":
         response = "hello"
-        print(payload)
-        print(text)
-        print(user)
-        print(chat)
     return response, chat.get("id")
 
 
