@@ -11,7 +11,7 @@ def serialize(payload: Dict) -> Tuple[str, int]:
         chat = validated_message.chat
         chat_id = chat.id
         if text is not None:
-            if text == "/start":
+            if text.lower() == "hello":
                 response = "hello"
             return response, chat_id
 
