@@ -4,7 +4,7 @@ from typing import Dict, Tuple
 from bot.telegram_models import Message
 
 
-def serialize_message(payload: Dict) -> Tuple[str, int]:
+def serialize(payload: Dict) -> Tuple[str, int]:
     try:
         validated_message = Message.model_validate(payload)
         text = validated_message.text
