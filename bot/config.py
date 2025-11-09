@@ -63,7 +63,6 @@ class Settings(BaseSettings):
     local_port: int
 
     debug: bool = False
-    telegram_url = f"https://api.telegram.org/bot{bot_token}"
 
     class Config:
         extra = "allow"

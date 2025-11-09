@@ -3,6 +3,7 @@ from typing import Literal, Optional, Any, List, Union
 
 
 class Chat(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
     id: int
     type: Literal["private"]
     username: Optional[str] = None
