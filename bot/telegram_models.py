@@ -1,12 +1,5 @@
-from pydantic import BaseModel, Field, ConfigDict, field_validator
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Optional, Any, List, Union
-
-
-class Chat(BaseModel):
-    id: int
-    type: str
-    first_name: Optional[str] = None
-    username: Optional[str] = None
 
 
 class User(BaseModel):
@@ -15,6 +8,15 @@ class User(BaseModel):
     first_name: str
     username: Optional[str] = None
     language_code: Optional[str] = None
+
+
+class Chat(BaseModel):
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
+    id: int
+    type: str
+    first_name: Optional[str] = None
+    username: Optional[str] = None
+    form_: User = Field(alias="from")
 
 
 class KeyboardButton(BaseModel):
