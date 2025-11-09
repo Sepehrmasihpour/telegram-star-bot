@@ -99,7 +99,7 @@ class Message(BaseModel):
     from_: User = Field(alias="from")
     date: int
     chat: Chat
-    forward_origin: Any
+    forward_origin: Optional[Any] = None
     #!forward_origin is intended for sending an error if not none the message is forwarded
     #! if later we want to something different with forward messages we need to change this
     text: str  # * later this should be optional

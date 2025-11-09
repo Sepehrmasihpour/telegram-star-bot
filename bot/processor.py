@@ -1,41 +1,15 @@
-from pydantic import ValidationError
 from typing import Dict, Tuple
-
-from bot.telegram_models import Message
 
 
 def serialize(payload: Dict) -> Tuple[str, int]:
-    try:
-        validated_message = Message.model_validate(payload)
-        text = validated_message.text
-        chat = validated_message.chat
-        chat_id = chat.id
-        if text is not None:
-            if text.lower() == "hello":
-                response = "hello"
-            return response, chat_id
-
-    except ValidationError as e:
-        # Classify common failure modes so your API/logs are actually useful.
-        errors = e.errors()  # list[dict]: {'type','loc','msg','input','ctx'?}
-        extras = [err["loc"][-1] for err in errors if err["type"] == "extra_forbidden"]
-        missing = [err["loc"][-1] for err in errors if err["type"] == "missing"]
-        type_mismatches = [
-            err for err in errors if err["type"] not in {"extra_forbidden", "missing"}
-        ]
-
-        return None, {
-            "message": "Invalid payload",
-            "extra_fields": extras or None,
-            "missing_fields": missing or None,
-            "type_errors": [
-                {"loc": err["loc"], "type": err["type"], "msg": err["msg"]}
-                for err in type_mismatches
-            ]
-            or None,
-            # Original Pydantic detail if you want the raw thing
-            "raw": errors,
-        }
+    text = payload.get("text")
+    user = payload.get("user")
+    chat = payload.get("chat")
+    if user.get("is_bot"):
+        response = "bots not allowed"
+    if text == "/start":
+        response = "hello"
+    return response, chat.get("id")
 
 
 # def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:
