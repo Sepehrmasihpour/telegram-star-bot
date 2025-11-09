@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Literal, Optional, Any, List, Union
 
 
@@ -93,6 +93,7 @@ class BotCommand(BaseModel):
 
 
 class Message(BaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
     message_id: int
     _from: User = Field(alias="from")
     date: int
@@ -100,9 +101,9 @@ class Message(BaseModel):
     forward_origin: Any
     #!forward_origin is intended for sending an error if not none the message is forwarded
     #! if later we want to something different with forward messages we need to change this
-    text: str
+    text: str  # * later this should be optional
     entities: Optional[MessageEntity] = None
-    reply_markup: Optional[InlineKeyboardMarkup]
+    reply_markup: Optional[InlineKeyboardMarkup] = None
 
 
 class MaybeInaccessibleMessage(Message): ...

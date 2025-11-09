@@ -9,7 +9,7 @@ from pydantic import HttpUrl
 from bot.config import settings, logger
 
 
-BASE_URL = f"https://api.telegram.org/bot{settings.bot_token}"
+BASE_URL = settings.telegram_url
 
 
 def _api(method: str) -> str:
