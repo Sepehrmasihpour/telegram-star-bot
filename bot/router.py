@@ -152,14 +152,14 @@ async def telegram_webhook(request: Request):
 
     # 4) route + build reply
     try:
-        response_text, chat_id = serialize(message)
+        response, chat_id = serialize(message)
     except Exception as e:
         logger.error("Serialize/route failed: %s", e)
         raise HTTPException(status_code=500, detail="Internal routing error")
 
     # 5) reply via Telegram sendMessage
     send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
-    params = {"chat_id": chat_id, "text": response_text}
+    params = {"chat_id": chat_id, "text": response}
 
     try:
         resp = await request.app.state.http.post(send_url, params=params)
