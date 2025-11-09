@@ -2,21 +2,16 @@ from typing import Dict, Tuple
 
 
 def serialize(payload: Dict) -> Tuple[str, int]:
-    try:
-
-        text = payload.get("text")
-        user = payload.get("user")
-        chat = payload.get("chat")
-        if user.get("is_bot"):
-            response = "bots not allowed"
-        if text == "/start":
-            response = "hello"
-        return response, chat.get("id")
-    except Exception as e:
-        print(e)
+    text = payload.get("text")
+    user = payload.get("user")
+    chat = payload.get("chat")
+    if text == "/start":
+        response = "hello"
+        print(payload)
         print(text)
-        print(chat)
         print(user)
+        print(chat)
+    return response, chat.get("id")
 
 
 # def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:
