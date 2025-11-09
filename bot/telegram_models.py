@@ -1,9 +1,9 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Literal, Optional, Any, List, Union
 
 
 class Chat(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
     id: int
     type: Literal["private"]
     username: Optional[str] = None
@@ -16,37 +16,6 @@ class User(BaseModel):
     is_bot: bool
     first_name: str
     username: Optional[str] = None
-
-
-EntityType = Literal[
-    "mention",  # @username
-    "hashtag",  # #hashtag or #hashtag@chatusername
-    "cashtag",  # $USD or $USD@chatusername
-    "bot_command",  # /start@jobs_bot
-    "url",  # https://telegram.org
-    "email",  # do-not-reply@telegram.org
-    "phone_number",  # +1-212-555-0123
-    "bold",
-    "italic",
-    "underline",
-    "strikethrough",
-    "spoiler",
-    "blockquote",
-    "expandable_blockquote",
-    "code",  # monowidth string
-    "pre",  # monowidth block
-    "text_link",  # clickable text URL
-    "text_mention",  # for users without usernames
-    "custom_emoji",  # inline custom emoji stickers
-]
-
-
-class MessageEntity(BaseModel):
-    type: EntityType
-    offset: int
-    length: int
-    url: Optional[str] = None
-    user: Optional[User] = User
 
 
 class KeyboardButton(BaseModel):
@@ -76,10 +45,6 @@ class InlineKeyboardMarkup(BaseModel):
     inline_keyboard: list[list[InlineKeyboardButton]]
 
 
-class CopyTextButton(BaseModel):
-    text: str
-
-
 class ForceReply(BaseModel):
     input_field_placeholder: Optional[str] = str
 
@@ -88,13 +53,20 @@ class ReplyKeyboardRemove(BaseModel):
     remove_keyboard: Literal[True]
 
 
-class BotCommand(BaseModel):
-    command: str
-    description: str
+class Text(BaseModel):
+    text: str
+
+    @field_validator("text")
+    def validate_command(cls, v):
+        allowed = {"/start", "/buy", "/prices", "/support"}
+        v_lower = v.lower()
+        if v_lower not in allowed:
+            raise ValueError(f"Invalid command: {v}")
+        return v_lower
 
 
 class Message(BaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="allow", populate_by_name=True)
     message_id: int
     from_: User = Field(alias="from")
     date: int
@@ -102,8 +74,7 @@ class Message(BaseModel):
     forward_origin: Optional[Any] = None
     #!forward_origin is intended for sending an error if not none the message is forwarded
     #! if later we want to something different with forward messages we need to change this
-    text: str  # * later this should be optional
-    entities: Optional[MessageEntity] = None
+    text: Optional[Text] = None
     reply_markup: Optional[InlineKeyboardMarkup] = None
 
 
@@ -130,7 +101,6 @@ class Update(BaseModel):
 class SendMessage(BaseModel):
     chat_id: int
     text: str
-    entities: Optional[List[MessageEntity]] = None
     parse_mode: Optional[str] = None
     protect_content: Optional[bool] = False
     reply_markup: Optional[

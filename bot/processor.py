@@ -1,61 +1,30 @@
-from typing import Dict
+from typing import Dict, Tuple, Union
+from telegram_models import Chat, Text
+
+# def serialize(payload: Dict) -> Dict:
+#     text = payload.get("text")
+#     user = payload.get("from")
+#     chat = payload.get("chat")
+#     if user.get("is_bot"):
+#         raise ValueError()
+#     if text == "/start":
+#         response_params = {"text": "hellp", "chat_id": chat.get("id")}
+#     return response_params
 
 
-def serialize(payload: Dict) -> Dict:
-    text = payload.get("text")
-    user = payload.get("from")
-    chat = payload.get("chat")
-    if user.get("is_bot"):
-        raise ValueError()
-    if text == "/start":
-        response_params = {"text": "hellp", "chat_id": chat.get("id")}
-    return response_params
+def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:
+    chat = Chat(**{**payload, **payload["chat"], **payload["from"]})
+    print(chat)
+    if payload.get("text"):
+        return process_text(chat, Text(**payload))
+    raise ValueError("Payload type is not allowed.")
 
 
-# def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:
-#     chat = Chat(**{**payload, **payload["chat"], **payload["from"]})
-#     if payload.get("video"):
-#         return process_video(chat, Video(**payload["video"]))
-#     if payload.get("text"):
-#         return process_text(chat, Text(**payload))
-#     if payload.get("voice"):
-#         return process_voice(chat, Voice(**payload["voice"]))
-#     if payload.get("audio"):
-#         return process_audio(chat, Audio(**payload["audio"]))
-#     if payload.get("document"):
-#         return process_document(chat, Document(**payload["document"]))
-#     if payload.get("photo"):
-#         # Matches for compressed images
-#         return process_photo(chat, [PhotoFragment(**d) for d in payload["photo"]])
-#     raise ValueError("Payload type is not allowed.")
+def process_text(chat: Chat, data: Text) -> Tuple[str, int]:
+    try:
 
-
-# def process_video(chat, data) -> Tuple[str, int]:
-#     return "Received a video", chat.id
-
-
-# def process_text(chat: Chat, data: Text) -> Tuple[str, int]:
-#     if "stop" in data.text or "exit" in data.text or "kill" in data.text:
-#         response = "Stopping webhook server"
-#         os.kill(
-#             os.getpid(), 15
-#         )  # Send a terminate signal for the current process ID triggering shutdown event
-#     else:
-#         response = f"Received {data.text}"
-#     return response, chat.id
-
-
-# def process_voice(chat, data) -> Tuple[str, int]:
-#     return "Received a voice memo", chat.id
-
-
-# def process_audio(chat, data) -> Tuple[str, int]:
-#     return "Received an audio file", chat.id
-
-
-# def process_document(chat, data) -> Tuple[str, int]:
-#     return "Received a document", chat.id
-
-
-# def process_photo(chat, data) -> Tuple[str, int]:
-#     return "Received a photo", chat.id
+        if "/start" in data.text:
+            response_text = "hello"
+        return {"chat_id": chat.id, "text": response_text}
+    except ValueError as e:
+        raise ValueError(e)
