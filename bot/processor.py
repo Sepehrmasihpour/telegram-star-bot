@@ -1,5 +1,5 @@
 from typing import Dict, Tuple, Union
-from telegram_models import Chat, Text
+from bot.telegram_models import Chat, Text
 
 # def serialize(payload: Dict) -> Dict:
 #     text = payload.get("text")
