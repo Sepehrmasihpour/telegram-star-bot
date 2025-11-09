@@ -3,12 +3,10 @@ from typing import Literal, Optional, Any, List, Union
 
 
 class Chat(BaseModel):
-    model_config = ConfigDict(extra="allow", populate_by_name=True)
     id: int
-    type: Literal["private"]
+    type: str
+    first_name: Optional[str] = None
     username: Optional[str] = None
-    first_name: str
-    last_name: Optional[str] = None
 
 
 class User(BaseModel):
@@ -16,6 +14,7 @@ class User(BaseModel):
     is_bot: bool
     first_name: str
     username: Optional[str] = None
+    language_code: Optional[str] = None
 
 
 class KeyboardButton(BaseModel):
@@ -63,6 +62,12 @@ class Text(BaseModel):
         if v_lower not in allowed:
             raise ValueError(f"Invalid command: {v}")
         return v_lower
+
+
+class MessageEntity(BaseModel):
+    offset: int
+    length: int
+    type: str
 
 
 class Message(BaseModel):
