@@ -8,7 +8,7 @@ def serialize(payload: Dict) -> Dict:
     if user.get("is_bot"):
         raise ValueError()
     if text == "/start":
-        response_params = {"text": "hellp", "chat_id": chat.get_id}
+        response_params = {"text": "hellp", "chat_id": chat.get("id")}
     return response_params
 
 
