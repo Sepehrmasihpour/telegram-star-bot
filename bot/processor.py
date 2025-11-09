@@ -1,15 +1,15 @@
-from typing import Dict, Tuple
+from typing import Dict
 
 
-def serialize(payload: Dict) -> Tuple[str, int]:
+def serialize(payload: Dict) -> Dict:
     text = payload.get("text")
     user = payload.get("from")
     chat = payload.get("chat")
     if user.get("is_bot"):
         raise ValueError()
     if text == "/start":
-        response = "hello"
-    return response, chat.get("id")
+        response_params = {"text": "hellp", "chat_id": chat.get_id}
+    return response_params
 
 
 # def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:

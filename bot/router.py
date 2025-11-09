@@ -152,14 +152,14 @@ async def telegram_webhook(request: Request):
 
     # 4) route + build reply
     try:
-        response, chat_id = serialize(message)
+        response_params = serialize(message)
     except Exception as e:
         logger.error("Serialize/route failed: %s", e)
         raise HTTPException(status_code=500, detail="Internal routing error")
 
     # 5) reply via Telegram sendMessage
     send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
-    params = {"chat_id": chat_id, "text": response}
+    params = response_params
 
     try:
         resp = await request.app.state.http.post(send_url, params=params)
@@ -171,8 +171,6 @@ async def telegram_webhook(request: Request):
             getattr(e, "response", None) and e.response.text,
         )
         # Return 200 to avoid Telegram retry storms; log the error for us
-        print(chat_id)
-        print(response)
         return {"ok": False, "error": "sendMessage failed"}
 
     return {"ok": True}
