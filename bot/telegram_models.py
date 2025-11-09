@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Literal, Optional, Any, List, Union
 
 
@@ -56,6 +56,14 @@ class ReplyKeyboardRemove(BaseModel):
 
 class Text(BaseModel):
     text: str
+
+    @field_validator("text")
+    def validate_command(cls, v):
+        allowed = {"/start", "/buy", "/prices", "/support"}
+        v_lower = v.lower()
+        if v_lower not in allowed:
+            raise ValueError(f"Invalid command: {v}")
+        return v_lower
 
 
 class MessageEntity(BaseModel):

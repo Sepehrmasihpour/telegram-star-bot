@@ -1,16 +1,6 @@
 from typing import Dict, Tuple, Union
 from bot.telegram_models import Chat, Text
 
-# def serialize(payload: Dict) -> Dict:
-#     text = payload.get("text")
-#     user = payload.get("from")
-#     chat = payload.get("chat")
-#     if user.get("is_bot"):
-#         raise ValueError()
-#     if text == "/start":
-#         response_params = {"text": "hellp", "chat_id": chat.get("id")}
-#     return response_params
-
 
 def serialize(payload: Dict[str, Union[str, int, dict]]) -> Tuple[str, int]:
     chat = Chat(**{**payload, **payload["chat"], **payload["from"]})
