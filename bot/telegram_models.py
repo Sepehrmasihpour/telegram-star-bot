@@ -96,7 +96,7 @@ class BotCommand(BaseModel):
 class Message(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     message_id: int
-    _from: User = Field(alias="from")
+    from_: User = Field(alias="from")
     date: int
     chat: Chat
     forward_origin: Any
