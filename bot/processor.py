@@ -1,19 +1,19 @@
 from pydantic import ValidationError
-from typing import Dict
+from typing import Dict, Tuple
 
-from bot.telegram_models import Message, SendMessage
-from bot.telegram_client import send_message
+from bot.telegram_models import Message
 
 
-def serialize_message(payload: Dict) -> Message:
+def serialize_message(payload: Dict) -> Tuple[str, int]:
     try:
         validated_message = Message.model_validate(payload)
         text = validated_message.text
         chat = validated_message.chat
+        chat_id = chat.id
         if text is not None:
             if text == "/start":
-                msg = SendMessage(chat_id=chat.id, text="hello")
-                send_message(msg)
+                response = "hello"
+            return response, chat_id
 
     except ValidationError as e:
         # Classify common failure modes so your API/logs are actually useful.
