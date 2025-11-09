@@ -171,6 +171,8 @@ async def telegram_webhook(request: Request):
             getattr(e, "response", None) and e.response.text,
         )
         # Return 200 to avoid Telegram retry storms; log the error for us
+        print(chat_id)
+        print(response)
         return {"ok": False, "error": "sendMessage failed"}
 
     return {"ok": True}
