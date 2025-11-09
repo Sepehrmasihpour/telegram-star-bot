@@ -3,7 +3,7 @@ from typing import Dict, Tuple
 
 def serialize(payload: Dict) -> Tuple[str, int]:
     text = payload.get("text")
-    user = payload.get("user")
+    user = payload.get("from")
     chat = payload.get("chat")
     if text == "/start":
         response = "hello"
