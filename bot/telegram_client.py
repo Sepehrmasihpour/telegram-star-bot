@@ -1,6 +1,6 @@
 import httpx
 from bot.telegram_models import SendMessage
-from config import settings
+from bot.config import settings
 
 BASE_URL = f"https://api.telegram.org/bot{settings.bot_token}"
 
