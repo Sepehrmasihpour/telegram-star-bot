@@ -21,3 +21,4 @@ dist/
 *.pyd
 *.tmp
 *.swp
+dev.db

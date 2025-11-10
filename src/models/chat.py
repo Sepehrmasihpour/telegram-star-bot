@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer, Boolean, String
-from db.base import Base
+from src.db.base import Base
 
 
 class Chat(Base):

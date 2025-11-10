@@ -6,6 +6,7 @@ from sqlalchemy import pool
 import os
 import sys
 from alembic import context
+from sqlalchemy.engine import make_url
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -78,6 +79,7 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+    url = make_url(config.get_main_option("sqlalchemy.url"))
 
     with connectable.connect() as connection:
         context.configure(
@@ -85,6 +87,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            render_as_batch=(url.get_backend_name() == "sqlite"),
         )
 
         with context.begin_transaction():
