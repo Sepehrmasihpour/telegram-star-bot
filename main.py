@@ -1,8 +1,8 @@
 import uvicorn
 from fastapi import FastAPI
 
-from bot.config import settings
-from bot.router import router, lifespan
+from src.config import settings
+from src.router import router, lifespan
 
 with open("README.md", encoding="utf-8") as file:
     readme_data = file.readlines()
