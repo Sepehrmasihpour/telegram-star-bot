@@ -44,6 +44,8 @@ class Settings(BaseSettings):
 
     bot_token: str
 
+    db_url: str
+
     # Tunneling specifics
     ngrok_token: str | None = None
     endpoint: str = "/telegram-webhook"
