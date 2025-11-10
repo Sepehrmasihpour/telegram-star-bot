@@ -12,9 +12,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.routing import APIRouter
 
 from src.config import settings, logger
-from bot.processor import serialize
-from bot.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
-from bot.webhook import set_webhook, delete_webhook
+from src.bot.processor import serialize
+from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
+from src.bot.webhook import set_webhook, delete_webhook
 
 router = APIRouter()
 
