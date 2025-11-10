@@ -16,9 +16,11 @@ pydantic-settings = "^2.11.0"
 pyngrok = "^7.4.1"
 uvicorn = "^0.38.0"
 sqlalchemy = "^2.0.44"
-alembic = "^1.17.1"
 psycopg = {extras = ["binary"], version = "^3.2.12"}
 
+
+[tool.poetry.group.dev.dependencies]
+alembic = "^1.17.1"
 
 [build-system]
 requires = ["poetry-core"]
