@@ -16,7 +16,6 @@ class Chat(BaseModel):
     type: str
     first_name: Optional[str] = None
     username: Optional[str] = None
-    form_: User = Field(alias="from")
 
 
 class KeyboardButton(BaseModel):
