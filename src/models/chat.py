@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, Boolean, String
+from sqlalchemy import Integer, Boolean, String, UniqueConstraint
 from src.db.base import Base
 
 
@@ -13,6 +13,11 @@ class Chat(Base):
     accepted_terms: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
+    phone_number: Mapped[str] = mapped_column(String, nullable=True)
+    phone_number_validated: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
+    __table_args__ = (UniqueConstraint("phone_number", name="uq_chats_phone_number"),)
 
 
 def __repr__(self):

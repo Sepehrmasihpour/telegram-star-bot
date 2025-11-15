@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.requests import Request
 from fastapi.responses import RedirectResponse
 from fastapi.routing import APIRouter
@@ -15,6 +15,9 @@ from src.config import settings, logger
 from src.bot.processor import serialize
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
+
+from sqlalchemy.orm import Session
+from src.db import get_db
 
 router = APIRouter()
 
@@ -112,7 +115,7 @@ def verify_secret_token(request: Request) -> bool:
 
 # ---------- Webhook endpoint ----------
 @router.post(settings.endpoint)
-async def telegram_webhook(request: Request):
+async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     """Main webhook: receives updates, routes them, replies with sendMessage."""
     logger.debug(
         "Incoming connection from %s via host %s",
@@ -152,7 +155,7 @@ async def telegram_webhook(request: Request):
 
     # 4) route + build reply
     try:
-        response_params = serialize(message)
+        response_params = serialize(message, db)
     except Exception as e:
         logger.error("Serialize/route failed: %s", e)
         raise HTTPException(status_code=500, detail="Internal routing error")

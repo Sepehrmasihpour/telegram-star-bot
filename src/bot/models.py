@@ -37,7 +37,7 @@ class ReplyKeyboardMarkup(BaseModel):
 class InlineKeyboardButton(BaseModel):
     text: str
     url: Optional[str] = None
-    callback_date: str
+    callback_data: str
     copy_text: Optional[str] = None
 
 
