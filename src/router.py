@@ -165,7 +165,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     params = response_params
 
     try:
-        resp = await request.app.state.http.post(send_url, params=params)
+        resp = await request.app.state.http.post(send_url, json=params)
         resp.raise_for_status()
     except httpx.HTTPError as e:
         logger.error(
