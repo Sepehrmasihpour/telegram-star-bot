@@ -1,15 +1,16 @@
-from typing import Dict, Union, Any
+from typing import Dict, Any
 from src.bot.models import Chat, Text
 from src.crud.chat import get_chat_by_chat_id, create_chat
 from sqlalchemy.orm import Session
 from src.config import logger
+from pydantic import ValidationError
 
 
 class NotPrivateChat(ValueError):
     pass
 
 
-def serialize(payload: Dict[str, Any], db: Session) -> Dict[str, Union[str, int]]:
+def serialize(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     chat_data = payload.get("chat") or {}
     from_data = payload.get("from") or {}
 
@@ -23,15 +24,20 @@ def serialize(payload: Dict[str, Any], db: Session) -> Dict[str, Union[str, int]
 
     try:
         data = Text(**payload)
-    except Exception:
-        raise ValueError("Payload is not a valid Text message.")
+    except ValidationError:
+        return {"chat_id": chat_data.get("id"), "text": "un supported command"}
     return process_text(chat, data, db)
 
 
-def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Union[str, int]]:
+def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     if data.text == "/start":
         authentication_response = chat_authentication(db=db, data=chat)
-        if authentication_response:
+        if authentication_response is False:
+            return {
+                "chat_id": chat.id,
+                "text": "authentication failed",
+            }
+        if authentication_response is True:
             return {
                 "chat_id": chat.id,
                 "text": "به ربات تست خوش آمدید",
@@ -46,7 +52,14 @@ def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Union[str, in
                     ]
                 },
             }
+        else:
+            return authentication_response
     logger.error("unsupported command")
+
+    return {
+        "chat_id": chat.id,
+        "text": "دستور پشتیبانی نمی‌شود.",
+    }
 
 
 def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
@@ -93,6 +106,37 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                           • شماره را با فرمت 09123456789 وارد کنید
                          """
                 ),
+                "reply_markup": {
+                    "force_reply": True,
+                    "input_field_placeholder": "09121753528",
+                },
+            }
+        if not chat.phone_number_validated:
+            return {
+                "chat_id": chat.chat_id,
+                "text": (
+                    """
+                         شماره تلفن تایید نشده\n
+                          برای ادامه باید شماره تایید بشه\n
+                          آیا میخواهید کد تایید بفرستیم یا شمارتونو عوض کنید؟
+                         """
+                ),
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "کد تایید بفرست",
+                                "callback_data": "send validation code",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "ویرایش شماره تلفن",
+                                "callback_data": "edit phone number",
+                            }
+                        ],
+                    ]
+                },
             }
         return True
     except Exception as e:

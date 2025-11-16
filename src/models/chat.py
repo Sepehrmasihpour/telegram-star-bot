@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, Boolean, String, UniqueConstraint
+from sqlalchemy import Integer, Boolean, String, UniqueConstraint, DateTime
 from src.db.base import Base
+from datetime import datetime
 
 
 class Chat(Base):
@@ -16,6 +17,9 @@ class Chat(Base):
     phone_number: Mapped[str] = mapped_column(String, nullable=True)
     phone_number_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
+    )
+    last_time_verfication_code_sent: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, server_default=None
     )
     __table_args__ = (UniqueConstraint("phone_number", name="uq_chats_phone_number"),)
 
