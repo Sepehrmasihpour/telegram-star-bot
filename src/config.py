@@ -33,6 +33,7 @@ class AllowedUpdates(StrEnum):
     edited_message: str = "edited_message"
     channel_post: str = "channel_post"
     edited_channel_post: str = "edited_channel_post"
+    callback_query: str = "callback_query"
 
 
 class Settings(BaseSettings):
@@ -57,7 +58,11 @@ class Settings(BaseSettings):
     certificate: FilePath | None = None
     drop_pending_updates: bool = True
     max_connections: PositiveInt = Field(40, le=100, ge=1)
-    allowed_updates: List[AllowedUpdates] = [AllowedUpdates.message]
+    allowed_updates: List[AllowedUpdates] = [
+        AllowedUpdates.message,
+        AllowedUpdates.edited_message,
+        AllowedUpdates.callback_query,
+    ]
 
     # API specifics
     host: str = socket.gethostbyname("localhost")
