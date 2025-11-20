@@ -176,7 +176,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
         return {"ok": True}
     if callback_query is not None:
-        print(callback_query)
+        logger.info(callback_query)
 
     if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
