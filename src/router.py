@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.routing import APIRouter
 
 from src.config import settings, logger
-from src.bot.processor import serialize
+from src.bot.processor import serialize_message
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
 
@@ -155,9 +155,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
     # 4) route + build reply
     try:
-        response_params = serialize(message, db)
+        response_params = serialize_message(message, db)
     except Exception as e:
-        logger.error("Serialize/route failed: %s", e)
+        logger.error("Serialize_message/route failed: %s", e)
         raise HTTPException(status_code=500, detail="Internal routing error")
 
     # 5) reply via Telegram sendMessage

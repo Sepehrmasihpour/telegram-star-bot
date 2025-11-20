@@ -10,7 +10,7 @@ class NotPrivateChat(ValueError):
     pass
 
 
-def serialize(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
+def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     chat_data = payload.get("chat") or {}
     from_data = payload.get("from") or {}
 
