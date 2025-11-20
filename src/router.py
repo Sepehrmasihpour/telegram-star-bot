@@ -147,33 +147,39 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         or update.get("edited_message")
         or update.get("channel_post")
     )
-    if not message:
+
+    callback_query = update.get("callback_query")
+
+    # 4) route + build reply for message update
+    if message is not None:
+        try:
+            response_params = serialize_message(message, db)
+        except Exception as e:
+            logger.error("Serialize_message/route failed: %s", e)
+            raise HTTPException(status_code=500, detail="Internal routing error")
+
+        # 5) reply via Telegram sendMessage
+        send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
+        params = response_params
+
+        try:
+            resp = await request.app.state.http.post(send_url, json=params)
+            resp.raise_for_status()
+        except httpx.HTTPError as e:
+            logger.error(
+                "sendMessage failed: %s | body=%s",
+                e,
+                getattr(e, "response", None) and e.response.text,
+            )
+            # Return 200 to avoid Telegram retry storms; log the error for us
+            return {"ok": False, "error": "sendMessage failed"}
+
+        return {"ok": True}
+    if callback_query is not None:
+        print(callback_query)
+
+    if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
         # but we'll return 422 to surface what's unsupported during dev
         logger.info("Unsupported update type: %s", update.keys())
         return {"ok": True, "ignored": True}  # 200 OK, no retry
-
-    # 4) route + build reply
-    try:
-        response_params = serialize_message(message, db)
-    except Exception as e:
-        logger.error("Serialize_message/route failed: %s", e)
-        raise HTTPException(status_code=500, detail="Internal routing error")
-
-    # 5) reply via Telegram sendMessage
-    send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
-    params = response_params
-
-    try:
-        resp = await request.app.state.http.post(send_url, json=params)
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        logger.error(
-            "sendMessage failed: %s | body=%s",
-            e,
-            getattr(e, "response", None) and e.response.text,
-        )
-        # Return 200 to avoid Telegram retry storms; log the error for us
-        return {"ok": False, "error": "sendMessage failed"}
-
-    return {"ok": True}
