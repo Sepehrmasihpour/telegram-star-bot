@@ -3,7 +3,7 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from urllib.parse import urljoin
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Optional, Dict, Union
 
 import httpx
 from fastapi import FastAPI, HTTPException, Depends
@@ -12,7 +12,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.routing import APIRouter
 
 from src.config import settings, logger
-from src.bot.processor import serialize_message
+from src.bot.processor import serialize_message, serialize_callback_query
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
 
@@ -113,6 +113,28 @@ def verify_secret_token(request: Request) -> bool:
     return secrets.compare_digest(header_val, settings.secret_token)
 
 
+# helper function for sending messages in telegram
+
+
+async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, None]:
+    send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
+    params = payload
+
+    try:
+        resp = await request.app.state.http.post(send_url, json=params)
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.error(
+            "sendMessage failed: %s | body=%s",
+            e,
+            getattr(e, "response", None) and e.response.text,
+        )
+        # Return 200 to avoid Telegram retry storms; log the error for us
+        return {"ok": False, "error": "sendMessage failed"}
+
+    return {"ok": True}
+
+
 # ---------- Webhook endpoint ----------
 @router.post(settings.endpoint)
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -159,24 +181,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             return {"ok": False, "error": "serializing message failed"}
 
         # 5) reply via Telegram sendMessage
-        send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
-        params = response_params
-
-        try:
-            resp = await request.app.state.http.post(send_url, json=params)
-            resp.raise_for_status()
-        except httpx.HTTPError as e:
-            logger.error(
-                "sendMessage failed: %s | body=%s",
-                e,
-                getattr(e, "response", None) and e.response.text,
-            )
-            # Return 200 to avoid Telegram retry storms; log the error for us
-            return {"ok": False, "error": "sendMessage failed"}
-
-        return {"ok": True}
+        return telegram_send_message(request=request, payload=response_params)
     if callback_query is not None:
-        logger.info(callback_query)
+        serialize_callback_query(payload=callback_query, db=db)
 
     if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
