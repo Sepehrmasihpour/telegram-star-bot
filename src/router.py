@@ -181,7 +181,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             return {"ok": False, "error": "serializing message failed"}
 
         # 5) reply via Telegram sendMessage
-        return telegram_send_message(request=request, payload=response_params)
+        return await telegram_send_message(request=request, payload=response_params)
     if callback_query is not None:
         serialize_callback_query(payload=callback_query, db=db)
 
