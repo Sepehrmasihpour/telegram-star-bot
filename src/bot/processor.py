@@ -10,9 +10,21 @@ class NotPrivateChat(ValueError):
     pass
 
 
+class IsBot(TypeError):
+    pass
+
+
 def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
-    chat_data = update_is_from_personal_chat(payload=payload)
+    chat_data = payload.get("chat") or {}
+    from_data = payload.get("from") or {}
+
+    if chat_data.get("type") != "private":
+        raise NotPrivateChat("Only private chats are supported.")
+
+    if chat_data.get("id") != from_data.get("id"):
+        raise NotPrivateChat("chat.id and from.id must match for private messages.")
+
     chat = Chat(**chat_data)
 
     try:
@@ -23,15 +35,18 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
 
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-    chat_data = update_is_from_personal_chat(payload=payload)
-    chat = Chat(**chat_data)
-    query_data = payload.get("data")
+    user = payload.get("user")
+    is_bot = user.get("is_bot")
+    if is_bot:
+        raise IsBot("the sender is a bot")
+    chat_id = user.get("id")
     query_id = payload.get("id")
-    return process_callback_query(chat, query_data, query_id, db)
+    query_data = payload.get("data")
+    return process_callback_query(chat_id, query_data, query_id, db)
 
 
-def process_callback_query(chat: Chat, quer_data: str, query_id: str):
-    print(f"{chat}---{quer_data}---{query_id}")
+def process_callback_query(chat_id: str, quer_data: str, query_id: str):
+    print(f"{chat_id}---{quer_data}---{query_id}")
 
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
@@ -167,16 +182,3 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
     except Exception as e:
         logger.error(f"chat authentication failed: {e}")
         return False
-
-
-def update_is_from_personal_chat(payload: Dict[str, Any]) -> Dict[str, Any]:
-    chat_data = payload.get("chat") or {}
-    from_data = payload.get("from") or {}
-
-    if chat_data.get("type") != "private":
-        raise NotPrivateChat("Only private chats are supported.")
-
-    if chat_data.get("id") != from_data.get("id"):
-        raise NotPrivateChat("chat.id and from.id must match for private messages.")
-
-    return chat_data
