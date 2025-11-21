@@ -156,7 +156,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             response_params = serialize_message(message, db)
         except Exception as e:
             logger.error("Serialize_message/route failed: %s", e)
-            raise HTTPException(status_code=500, detail="Internal routing error")
+            return {"ok": False, "error": "serializing message failed"}
 
         # 5) reply via Telegram sendMessage
         send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
@@ -178,7 +178,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     if callback_query is not None:
         logger.info(callback_query)
 
-    if message is None:
+    if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
         # but we'll return 422 to surface what's unsupported during dev
         logger.info("Unsupported update type: %s", update.keys())

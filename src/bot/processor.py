@@ -11,15 +11,8 @@ class NotPrivateChat(ValueError):
 
 
 def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-    chat_data = payload.get("chat") or {}
-    from_data = payload.get("from") or {}
 
-    if chat_data.get("type") != "private":
-        raise NotPrivateChat("Only private chats are supported.")
-
-    if chat_data.get("id") != from_data.get("id"):
-        raise NotPrivateChat("chat.id and from.id must match for private messages.")
-
+    chat_data = update_is_from_personal_chat(payload=payload)
     chat = Chat(**chat_data)
 
     try:
@@ -27,6 +20,18 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     except ValidationError:
         return {"chat_id": chat_data.get("id"), "text": "un supported command"}
     return process_text(chat, data, db)
+
+
+def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
+    chat_data = update_is_from_personal_chat(payload=payload)
+    chat = Chat(**chat_data)
+    query_data = payload.get("data")
+    query_id = payload.get("id")
+    return process_callback_query(chat, query_data, query_id, db)
+
+
+def process_callback_query(chat: Chat, quer_data: str, query_id: str):
+    print(f"{chat}---{quer_data}---{query_id}")
 
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
@@ -80,8 +85,18 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                 "text": f"{new_chat.first_name}, {new_chat.username} sign in",
                 "reply_markup": {
                     "inline_keyboard": [
-                        [{"text": "موافقم", "callback_data": "accepted terms"}],
-                        [{"text": "مشاهده قوانین", "callback_data": "show terms"}],
+                        [
+                            {
+                                "text": "خواندم و موافقم",
+                                "callback_data": "accepted terms",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "مشاهده قوانین",
+                                "callback_data": "show terms for acceptance",
+                            }
+                        ],
                     ]
                 },
             }
@@ -91,8 +106,18 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                 "text": f"{chat.first_name}, {chat.username} in the data base",
                 "reply_markup": {
                     "inline_keyboard": [
-                        [{"text": "موافقم", "callback_data": "accepted terms"}],
-                        [{"text": "مشاهده قوانین", "callback_data": "show terms"}],
+                        [
+                            {
+                                "text": "خواندم و موافقم",
+                                "callback_data": "accepted terms",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "مشاهده قوانین",
+                                "callback_data": "show terms for acceptance",
+                            }
+                        ],
                     ]
                 },
             }
@@ -142,3 +167,16 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
     except Exception as e:
         logger.error(f"chat authentication failed: {e}")
         return False
+
+
+def update_is_from_personal_chat(payload: Dict[str, Any]) -> Dict[str, Any]:
+    chat_data = payload.get("chat") or {}
+    from_data = payload.get("from") or {}
+
+    if chat_data.get("type") != "private":
+        raise NotPrivateChat("Only private chats are supported.")
+
+    if chat_data.get("id") != from_data.get("id"):
+        raise NotPrivateChat("chat.id and from.id must match for private messages.")
+
+    return chat_data
