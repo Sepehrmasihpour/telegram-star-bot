@@ -35,15 +35,14 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
 
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-    print(payload)
-    # user = payload.get("user")
-    # is_bot = user.get("is_bot")
-    # if is_bot:
-    #     raise IsBot("the sender is a bot")
-    # chat_id = user.get("id")
-    # query_id = payload.get("id")
-    # query_data = payload.get("data")
-    # return process_callback_query(chat_id, query_data, query_id, db)
+    user = payload.get("from")
+    is_bot = user.get("is_bot")
+    if is_bot:
+        raise IsBot("the sender is a bot")
+    chat_id = user.get("id")
+    query_id = payload.get("id")
+    query_data = payload.get("data")
+    return process_callback_query(chat_id, query_data, query_id, db)
 
 
 def process_callback_query(chat_id: str, quer_data: str, query_id: str):
