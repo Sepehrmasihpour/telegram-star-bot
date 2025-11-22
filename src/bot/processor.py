@@ -45,7 +45,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
     return process_callback_query(chat_id, query_data, query_id, db)
 
 
-def process_callback_query(chat_id: str, quer_data: str, query_id: str):
+def process_callback_query(chat_id: str, quer_data: str, query_id: str, db: Session):
     print(f"{chat_id}---{quer_data}---{query_id}")
 
 
