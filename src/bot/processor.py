@@ -10,15 +10,15 @@ class NotPrivateChat(ValueError):
     pass
 
 
-class IsBot(TypeError):
-    pass
-
-
 class CallbackQueryFromNonUser(LookupError):
     pass
 
 
 class UserAlreadyAcceptedTerms(KeyError):
+    pass
+
+
+class BotFound(PermissionError):
     pass
 
 
@@ -42,35 +42,40 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     return process_text(chat, data, db)
 
 
+#! this looks iffy to me find out if needs more error handling
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-    user = payload.get("from")
-    is_bot = user.get("is_bot")
-    if is_bot:
-        raise IsBot("the sender is a bot")
-    chat_id = user.get("id")
-    query_id = payload.get("id")
+    from_data = payload.get("from") or {}
+    if from_data.get("is_bot"):
+        raise BotFound("the callback query is from a bot")
+    chat_id = from_data.get("id")
+    message = payload.get("message")
+    message_id = message.get("id")
     query_data = payload.get("data")
-    return process_callback_query(chat_id, query_data, query_id, db)
+    query_id = payload.get("id")
+    return process_callback_query(query_id, chat_id, query_data, message_id, db)
 
 
-def process_callback_query(chat_id: str, query_data: str, query_id: str, db: Session):
+def process_callback_query(
+    query_id: str, chat_id: str, query_data: str, message_id: str, db: Session
+):
     if query_data == "show terms for acceptance":
         chat = get_chat_by_chat_id(db, chat_id)
-        if chat is None:
-            raise CallbackQueryFromNonUser(
-                "the chat that called this callback query is not in the database"
-            )
         if chat.accepted_terms:
-            raise UserAlreadyAcceptedTerms(
-                "user already accepted so the system should do nothing"
-            )
+            return {
+                "method": "answerCallback",
+                "params": {"callback_query_id": query_id},
+            }
         return {
-            "chat_id": chat_id,
-            "text": "these are the rules of this bot read them.",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [{"text": "خواندم", "callback_data": "read the terms"}],
-                ]
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": "these are the rules of this bot read them.",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "خواندم", "callback_data": "read the terms"}],
+                    ]
+                },
             },
         }
 

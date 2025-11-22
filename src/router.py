@@ -158,7 +158,7 @@ async def telegram_answer_callback_query(
 async def telegram_edit_messages_text(
     request: Request, payload: Dict
 ) -> Union[Dict, None]:
-    send_url = f"https://api.telegram.org/bot{settings.bot_token}/editMessageTex"
+    send_url = f"https://api.telegram.org/bot{settings.bot_token}/editMessageText"
     params = payload
 
     try:
@@ -170,7 +170,7 @@ async def telegram_edit_messages_text(
             e,
             getattr(e, "response", None) and e.response.text,
         )
-        return {"ok": False, "error": "editMessageTex failed"}
+        return {"ok": False, "error": "editMessageText failed"}
 
     return {"ok": True}
 
@@ -231,6 +231,14 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         method = response_params.get("method")
         if not method:
             return await telegram_send_message(request=request, payload=response_params)
+        if method == "answerCallback":
+            return await telegram_answer_callback_query(
+                request=request, payload=response_params.get("params")
+            )
+        if method == "editMessageText":
+            return await telegram_answer_callback_query(
+                request=request, payload=response_params.get("params")
+            )
     if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
         # but we'll return 422 to surface what's unsupported during dev
