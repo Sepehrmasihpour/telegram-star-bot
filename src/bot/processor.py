@@ -14,6 +14,14 @@ class IsBot(TypeError):
     pass
 
 
+class CallbackQueryFromNonUser(LookupError):
+    pass
+
+
+class UserAlreadyAcceptedTerms(KeyError):
+    pass
+
+
 def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
     chat_data = payload.get("chat") or {}
@@ -47,7 +55,27 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
 
 def process_callback_query(chat_id: str, query_data: str, query_id: str, db: Session):
     if query_data == "show terms for acceptance":
-        return {"callback_query_id": query_id, "tex": "test"}
+        chat = get_chat_by_chat_id(db, chat_id)
+        if chat is None:
+            raise CallbackQueryFromNonUser(
+                "the chat that called this callback query is not in the database"
+            )
+        if chat.accepted_terms:
+            raise UserAlreadyAcceptedTerms(
+                "user already accepted so the system should do nothing"
+            )
+        return {
+            "chat_id": chat_id,
+            "text": "these are the rules of this bot read them.",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "خواندم", "callback_data": "read the terms"}],
+                ]
+            },
+        }
+
+    else:
+        ...
 
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
