@@ -142,7 +142,7 @@ async def telegram_answer_callback_query(
     params = payload
 
     try:
-        resp = await request.app.state.http.post(send_url, json=params)
+        resp = await request.app.state.http.post(send_url, params=params)
         resp.raise_for_status()
     except httpx.HTTPError as e:
         logger.error(
