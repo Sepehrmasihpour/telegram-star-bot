@@ -236,7 +236,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 request=request, payload=response_params.get("params")
             )
         if method == "editMessageText":
-            return await telegram_answer_callback_query(
+            return await telegram_edit_messages_text(
                 request=request, payload=response_params.get("params")
             )
     if message is None and callback_query is None:
