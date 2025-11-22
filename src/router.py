@@ -203,12 +203,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         # 5) reply via Telegram sendMessage
         return await telegram_send_message(request=request, payload=response_params)
     if callback_query is not None:
-        try:
-            response_params = serialize_callback_query(payload=callback_query, db=db)
-        except Exception as e:
-            logger.error("seraializing_callback_query failed: %s", e)
-            return {"ok": False, "error": "serializing callback failed"}
-        return await telegram_send_message(request=request, payload=response_params)
+        print(callback_query)
+        # try:
+        #     response_params = serialize_callback_query(payload=callback_query, db=db)
+        # except Exception as e:
+        #     logger.error("seraializing_callback_query failed: %s", e)
+        #     return {"ok": False, "error": "serializing callback failed"}
+        # return await telegram_send_message(request=request, payload=response_params)
     if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
         # but we'll return 422 to surface what's unsupported during dev
