@@ -45,8 +45,9 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
     return process_callback_query(chat_id, query_data, query_id, db)
 
 
-def process_callback_query(chat_id: str, quer_data: str, query_id: str, db: Session):
-    print(f"{chat_id}---{quer_data}---{query_id}")
+def process_callback_query(chat_id: str, query_data: str, query_id: str, db: Session):
+    if query_data == "show terms for acceptance":
+        return {"callback_query_id": query_id, "tex": "test"}
 
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:

@@ -135,6 +135,26 @@ async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, 
     return {"ok": True}
 
 
+async def telegram_answer_callback_query(
+    request: Request, payload: Dict
+) -> Union[Dict, None]:
+    send_url = f"https://api.telegram.org/bot{settings.bot_token}/answerCallbackQuery"
+    params = payload
+
+    try:
+        resp = await request.app.state.http.post(send_url, json=params)
+        resp.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.error(
+            "callback query answer failed: %s | body=%s",
+            e,
+            getattr(e, "response", None) and e.response.text,
+        )
+        return {"ok": False, "error": "answerCallbackQuery failed"}
+
+    return {"ok": True}
+
+
 # ---------- Webhook endpoint ----------
 @router.post(settings.endpoint)
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -183,8 +203,14 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         # 5) reply via Telegram sendMessage
         return await telegram_send_message(request=request, payload=response_params)
     if callback_query is not None:
-        serialize_callback_query(payload=callback_query, db=db)
-
+        try:
+            response_params = serialize_callback_query(payload=callback_query, db=db)
+        except Exception as e:
+            logger.error("seraializing_callback_query failed: %s", e)
+            return {"ok": False, "error": "serializing callback failed"}
+        return await telegram_answer_callback_query(
+            request=request, payload=response_params
+        )
     if message is None and callback_query is None:
         # unsupported update types could be safely 200'd to avoid Telegram retries,
         # but we'll return 422 to surface what's unsupported during dev
