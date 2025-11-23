@@ -91,33 +91,14 @@ def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     if data.text == "/start":
         authentication_response = chat_authentication(db=db, data=chat)
         if authentication_response is False:
-            return {
-                "chat_id": chat.id,
-                "text": "authentication failed",
-            }
+            return settings.telegram_process_outputs.authentication_failed(chat.id)
         if authentication_response is True:
-            return {
-                "chat_id": chat.id,
-                "text": "به ربات تست خوش آمدید",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [{"text": "خرید جنس 1", "callback_data": "buy product 1"}],
-                        [{"text": "خرید جنس 2", "callback_data": "buy product 2"}],
-                        [{"text": "خرید جنس 3", "callback_data": "buy product 3"}],
-                        [{"text": "قیمت های محصولات", "callback_data": "show prices"}],
-                        [{"text": "مشاهده قوانین", "callback_data": "show terms"}],
-                        [{"text": "پشتیبانی", "callback_data": "support"}],
-                    ]
-                },
-            }
+            return settings.telegram_process_outputs.shop_options(chat.id)
         else:
             return authentication_response
     logger.error("unsupported command")
 
-    return {
-        "chat_id": chat.id,
-        "text": "دستور پشتیبانی نمی‌شود.",
-    }
+    return settings.telegram_process_outputs.unsupported_command(chat.id)
 
 
 def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
@@ -133,72 +114,13 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                 logger.error("failed to create chat during authentication")
                 return False
 
-            return {
-                "chat_id": data.id,
-                "text": "I have read the terms and services and agree accept them",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "خواندم و موافقم",
-                                "callback_data": "accepted terms",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "مشاهده قوانین",
-                                "callback_data": "show terms for acceptance",
-                            }
-                        ],
-                    ]
-                },
-            }
+            return settings.telegram_process_outputs.terms_and_conditions(data.id)
         if not chat.accepted_terms:
-            return settings.telegram_process_outputs.terms_and_conditions(
-                chat_id=chat.chat_id
-            )
+            return settings.telegram_process_outputs.terms_and_conditions(chat.chat_id)
         if not chat.phone_number:
-            return {
-                "chat_id": chat.chat_id,
-                "text": (
-                    """
-                         به ربات تست خوش آمدید\n
-                          برای شروع، لطفا شماره تلفن خود را وارد کنید\n
-                          • شماره را با فرمت 09123456789 وارد کنید b 
-                         """
-                ),
-                "reply_markup": {
-                    "force_reply": True,
-                    "input_field_placeholder": "09121753528",
-                },
-            }
+            return settings.telegram_process_outputs.phone_number_input(chat.chat_id)
         if not chat.phone_number_validated:
-            return {
-                "chat_id": chat.chat_id,
-                "text": (
-                    """
-                         شماره تلفن تایید نشده\n
-                          برای ادامه باید شماره تایید بشه\n
-                          آیا میخواهید کد تایید بفرستیم یا شمارتونو عوض کنید؟
-                         """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "کد تایید بفرست",
-                                "callback_data": "send validation code",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "ویرایش شماره تلفن",
-                                "callback_data": "edit phone number",
-                            }
-                        ],
-                    ]
-                },
-            }
+            settings.telegram_process_outputs.phone_number_verfication(chat.chat_id)
         return True
     except Exception as e:
         logger.error(f"chat authentication failed: {e}")
