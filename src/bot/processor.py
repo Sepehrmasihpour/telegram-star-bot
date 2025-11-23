@@ -4,6 +4,7 @@ from src.crud.chat import get_chat_by_chat_id, create_chat
 from sqlalchemy.orm import Session
 from src.config import logger
 from pydantic import ValidationError
+from src.config import settings
 
 
 class NotPrivateChat(ValueError):
@@ -49,7 +50,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
         raise BotFound("the callback query is from a bot")
     chat_id = from_data.get("id")
     message = payload.get("message")
-    message_id = message.get("message_id")
+    message_id = message.get("message_  id")
     query_data = payload.get("data")
     query_id = payload.get("id")
     return process_callback_query(query_id, chat_id, query_data, message_id, db)
@@ -78,6 +79,9 @@ def process_callback_query(
                 },
             },
         }
+
+    if query_data == "read the terms":
+        return {}
 
     else:
         ...
@@ -131,7 +135,7 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
 
             return {
                 "chat_id": data.id,
-                "text": f"{new_chat.first_name}, {new_chat.username} sign in",
+                "text": "I have read the terms and services and agree accept them",
                 "reply_markup": {
                     "inline_keyboard": [
                         [
@@ -150,26 +154,9 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                 },
             }
         if not chat.accepted_terms:
-            return {
-                "chat_id": chat.chat_id,
-                "text": f"{chat.first_name}, {chat.username} in the data base",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "خواندم و موافقم",
-                                "callback_data": "accepted terms",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "مشاهده قوانین",
-                                "callback_data": "show terms for acceptance",
-                            }
-                        ],
-                    ]
-                },
-            }
+            return settings.telegram_process_outputs.terms_and_conditions(
+                chat_id=chat.chat_id
+            )
         if not chat.phone_number:
             return {
                 "chat_id": chat.chat_id,
@@ -177,7 +164,7 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                     """
                          به ربات تست خوش آمدید\n
                           برای شروع، لطفا شماره تلفن خود را وارد کنید\n
-                          • شماره را با فرمت 09123456789 وارد کنید
+                          • شماره را با فرمت 09123456789 وارد کنید b 
                          """
                 ),
                 "reply_markup": {

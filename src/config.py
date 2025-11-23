@@ -4,7 +4,7 @@ import socket
 import warnings
 from enum import IntEnum, StrEnum
 from ipaddress import IPv4Address
-from typing import List
+from typing import List, Union
 
 from pydantic import BaseModel, HttpUrl, FilePath, Field, PositiveInt
 from pydantic_settings import BaseSettings
@@ -34,6 +34,111 @@ class AllowedUpdates(StrEnum):
     channel_post: str = "channel_post"
     edited_channel_post: str = "edited_channel_post"
     callback_query: str = "callback_query"
+
+
+class TelegramProcessOutputs:
+    @staticmethod
+    def shop_options(chat_id: Union[str, int]):
+        return {
+            "chat_id": chat_id,
+            "text": "به ربات تست خوش آمدید",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "خرید جنس 1", "callback_data": "buy product 1"}],
+                    [{"text": "خرید جنس 2", "callback_data": "buy product 2"}],
+                    [{"text": "خرید جنس 3", "callback_data": "buy product 3"}],
+                    [{"text": "قیمت های محصولات", "callback_data": "show prices"}],
+                    [{"text": "مشاهده قوانین", "callback_data": "show terms"}],
+                    [{"text": "پشتیبانی", "callback_data": "support"}],
+                ]
+            },
+        }
+
+    @staticmethod
+    def unsupported_command(chat_id: Union[str, int]):
+        return {
+            "chat_id": chat_id,
+            "text": "دستور پشتیبانی نمی‌شود.",
+        }
+
+    @staticmethod
+    def phone_number_input(chat_id: Union[str, int]):
+
+        return {
+            "chat_id": chat_id,
+            "text": (
+                """
+                            به ربات تست خوش آمدید\n
+                            برای شروع، لطفا شماره تلفن خود را وارد کنید\n
+                            • شماره را با فرمت 09123456789 وارد کنید b 
+                            """
+            ),
+            "reply_markup": {
+                "force_reply": True,
+                "input_field_placeholder": "09121753528",
+            },
+        }
+
+    @staticmethod
+    def phone_number_verfication(chat_id: Union[str, int]):
+
+        return {
+            "chat_id": chat_id,
+            "text": (
+                """
+                            شماره تلفن تایید نشده\n
+                            برای ادامه باید شماره تایید بشه\n
+                            آیا میخواهید کد تایید بفرستیم یا شمارتونو عوض کنید؟
+                            """
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "کد تایید بفرست",
+                            "callback_data": "send validation code",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "ویرایش شماره تلفن",
+                            "callback_data": "edit phone number",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
+    def terms_and_conditions(chat_id: Union[str, int]):
+
+        return {
+            "chat_id": chat_id,
+            "text": "I have read the terms and services and agree accept them",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "خواندم و موافقم",
+                            "callback_data": "accepted terms",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "مشاهده قوانین",
+                            "callback_data": "show terms for acceptance",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
+    def authentication_failed(chat_id: Union[str, int]):
+        {
+            "chat_id": chat_id,
+            "text": "authentication failed",
+        }
 
 
 class Settings(BaseSettings):
@@ -70,6 +175,9 @@ class Settings(BaseSettings):
     bots_name: str = "test_bot"
 
     debug: bool = False
+
+    # telegram processing config
+    telegram_process_outputs = TelegramProcessOutputs
 
     class Config:
         extra = "allow"
