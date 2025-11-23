@@ -78,7 +78,7 @@ def process_callback_query(
 
     if query_data == "accepted terms":
         update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-        return {"method": False, "params": {"chat_id": chat_id, "text": "text"}}
+        return {"chat_id": chat_id, "text": "text"}
 
     else:
         ...

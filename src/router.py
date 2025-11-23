@@ -228,9 +228,9 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         except Exception as e:
             logger.error("seraializing_callback_query failed: %s", e)
             return {"ok": False, "error": "serializing callback failed"}
-        method = response_params.get("method")
-        if not method:
+        if "method" not in response_params:
             return await telegram_send_message(request=request, payload=response_params)
+        method = response_params.get("params")
         if method == "answerCallback":
             return await telegram_answer_callback_query(
                 request=request, payload=response_params.get("params")
