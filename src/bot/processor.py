@@ -72,7 +72,9 @@ def process_callback_query(
         )
 
     if query_data == "read the terms":
-        return settings.telegram_process_text_outputs.terms_and_conditions(chat_id)
+        return settings.telegram_process_callback_query_outputs.terms_and_conditions(
+            chat_id, message_id
+        )
 
     else:
         ...

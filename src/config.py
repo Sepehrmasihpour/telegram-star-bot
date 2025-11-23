@@ -165,6 +165,33 @@ class TelegramProcessCallbackQueryOutput:
             },
         }
 
+    @staticmethod
+    def terms_and_conditions(chat_id: Union[str, int], message_id: Union[str, int]):
+        return {
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": "I have read the terms and services and agree accept them",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "خواندم و موافقم",
+                                "callback_data": "accepted terms",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "مشاهده قوانین",
+                                "callback_data": "show terms for acceptance",
+                            }
+                        ],
+                    ]
+                },
+            },
+        }
+
 
 class Settings(BaseSettings):
     """Env configuration.
