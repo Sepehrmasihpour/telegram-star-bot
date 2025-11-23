@@ -135,7 +135,7 @@ class TelegramProcessOutputs:
 
     @staticmethod
     def authentication_failed(chat_id: Union[str, int]):
-        {
+        return {
             "chat_id": chat_id,
             "text": "authentication failed",
         }
@@ -177,7 +177,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # telegram processing config
-    telegram_process_outputs: TelegramProcessOutputs = TelegramProcessOutputs
+    telegram_process_outputs: type[TelegramProcessOutputs] = TelegramProcessOutputs
 
     class Config:
         extra = "allow"
