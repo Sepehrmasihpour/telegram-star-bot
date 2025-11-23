@@ -50,7 +50,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
         raise BotFound("the callback query is from a bot")
     chat_id = from_data.get("id")
     message = payload.get("message")
-    message_id = message.get("message_  id")
+    message_id = message.get("message_id")
     query_data = payload.get("data")
     query_id = payload.get("id")
     return process_callback_query(query_id, chat_id, query_data, message_id, db)
