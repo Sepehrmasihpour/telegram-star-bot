@@ -79,7 +79,7 @@ def process_callback_query(
     if query_data == "accepted_terms":
         update_chat_by_chat_id(db, chat_id, accepted_terms=True)
         print(get_chat_by_chat_id(db, chat_id))
-        return {"chat_id": chat_id, "text": "text"}
+        return {"method": False, "params": {"chat_id": chat_id, "text": "text"}}
 
     else:
         ...
