@@ -36,7 +36,7 @@ class AllowedUpdates(StrEnum):
     callback_query: str = "callback_query"
 
 
-class TelegramProcessOutputs:
+class TelegramProcessTextOutputs:
     @staticmethod
     def shop_options(chat_id: Union[str, int]):
         return {
@@ -141,6 +141,31 @@ class TelegramProcessOutputs:
         }
 
 
+class TelegramProcessCallbackQueryOutput:
+    @staticmethod
+    def empty_answer_callback(query_id: Union[str, int]):
+        return {
+            "method": "answerCallback",
+            "params": {"callback_query_id": query_id},
+        }
+
+    @staticmethod
+    def show_terms_condititons(chat_id: Union[str, int], message_id: Union[str, int]):
+        return {
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": "these are the rules of this bot read them.",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "خواندم", "callback_data": "read the terms"}],
+                    ]
+                },
+            },
+        }
+
+
 class Settings(BaseSettings):
     """Env configuration.
 
@@ -177,7 +202,13 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # telegram processing config
-    telegram_process_outputs: type[TelegramProcessOutputs] = TelegramProcessOutputs
+    telegram_process_text_outputs: type[TelegramProcessTextOutputs] = (
+        TelegramProcessTextOutputs
+    )
+
+    telegram_process_callback_query_outputs: type[
+        TelegramProcessCallbackQueryOutput
+    ] = TelegramProcessCallbackQueryOutput
 
     class Config:
         extra = "allow"

@@ -62,26 +62,17 @@ def process_callback_query(
     if query_data == "show terms for acceptance":
         chat = get_chat_by_chat_id(db, chat_id)
         if chat.accepted_terms:
-            return {
-                "method": "answerCallback",
-                "params": {"callback_query_id": query_id},
-            }
-        return {
-            "method": "editMessageText",
-            "params": {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": "these are the rules of this bot read them.",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [{"text": "خواندم", "callback_data": "read the terms"}],
-                    ]
-                },
-            },
-        }
+            return (
+                settings.telegram_process_callback_query_outputs.empty_answer_callback(
+                    query_id
+                )
+            )
+        return settings.telegram_process_callback_query_outputs.show_terms_condititons(
+            chat_id, message_id
+        )
 
     if query_data == "read the terms":
-        return {}
+        return settings.telegram_process_text_outputs.terms_and_conditions(chat_id)
 
     else:
         ...
@@ -91,14 +82,14 @@ def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     if data.text == "/start":
         authentication_response = chat_authentication(db=db, data=chat)
         if authentication_response is False:
-            return settings.telegram_process_outputs.authentication_failed(chat.id)
+            return settings.telegram_process_text_outputs.authentication_failed(chat.id)
         if authentication_response is True:
-            return settings.telegram_process_outputs.shop_options(chat.id)
+            return settings.telegram_process_text_outputs.shop_options(chat.id)
         else:
             return authentication_response
     logger.error("unsupported command")
 
-    return settings.telegram_process_outputs.unsupported_command(chat.id)
+    return settings.telegram_process_text_outputs.unsupported_command(chat.id)
 
 
 def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
@@ -114,13 +105,19 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
                 logger.error("failed to create chat during authentication")
                 return False
 
-            return settings.telegram_process_outputs.terms_and_conditions(data.id)
+            return settings.telegram_process_text_outputs.terms_and_conditions(data.id)
         if not chat.accepted_terms:
-            return settings.telegram_process_outputs.terms_and_conditions(chat.chat_id)
+            return settings.telegram_process_text_outputs.terms_and_conditions(
+                chat.chat_id
+            )
         if not chat.phone_number:
-            return settings.telegram_process_outputs.phone_number_input(chat.chat_id)
+            return settings.telegram_process_text_outputs.phone_number_input(
+                chat.chat_id
+            )
         if not chat.phone_number_validated:
-            settings.telegram_process_outputs.phone_number_verfication(chat.chat_id)
+            settings.telegram_process_text_outputs.phone_number_verfication(
+                chat.chat_id
+            )
         return True
     except Exception as e:
         logger.error(f"chat authentication failed: {e}")
