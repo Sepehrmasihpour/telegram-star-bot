@@ -177,7 +177,7 @@ class Settings(BaseSettings):
     debug: bool = False
 
     # telegram processing config
-    telegram_process_outputs = TelegramProcessOutputs
+    telegram_process_outputs: TelegramProcessOutputs = TelegramProcessOutputs
 
     class Config:
         extra = "allow"
