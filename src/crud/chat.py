@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from src.models.chat import Chat
-from typing import Optional, Dict
+from typing import Optional, Dict, Any
 from src.config import logger
 
 
@@ -51,6 +51,29 @@ def update_chat(db: Session, id: int, data: Dict) -> Chat | None:
         db.refresh(chat)
         return chat
 
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"failed to update chat: {e}")
+        return None
+
+
+def update_chat_by_chat_id(db: Session, chat_id: int, **fields: Any):
+    try:
+
+        chat = db.query(Chat).filter(Chat.chat_id == chat_id).first()
+
+        if chat is None:
+            raise ValueError(f"Chat with chat_id={chat_id} not found")
+
+        for key, value in fields.items():
+            if hasattr(chat, key):
+                setattr(chat, key, value)
+            else:
+                raise AttributeError(f"Chat has no attribute '{key}'")
+
+        db.commit()
+        db.refresh(chat)
+        return chat
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"failed to update chat: {e}")

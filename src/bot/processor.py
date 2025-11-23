@@ -1,6 +1,6 @@
 from typing import Dict, Any
 from src.bot.models import Chat, Text
-from src.crud.chat import get_chat_by_chat_id, create_chat
+from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_id
 from sqlalchemy.orm import Session
 from src.config import logger
 from pydantic import ValidationError
@@ -75,6 +75,11 @@ def process_callback_query(
         return settings.telegram_process_callback_query_outputs.terms_and_conditions(
             chat_id, message_id
         )
+
+    if query_data == "accepted_terms":
+        update_chat_by_chat_id(db, chat_id, accepted_terms=True)
+        print(get_chat_by_chat_id(db, chat_id))
+        return {"chat_id": chat_id, "text": "text"}
 
     else:
         ...
