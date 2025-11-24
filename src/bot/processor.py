@@ -45,57 +45,71 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
 #! this looks iffy to me find out if needs more error handling
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-    from_data = payload.get("from") or {}
-    if from_data.get("is_bot"):
-        raise BotFound("the callback query is from a bot")
-    chat_id = from_data.get("id")
-    message = payload.get("message")
-    message_id = message.get("message_id")
-    query_data = payload.get("data")
-    query_id = payload.get("id")
-    return process_callback_query(query_id, chat_id, query_data, message_id, db)
+    try:
+        from_data = payload.get("from") or {}
+        if from_data.get("is_bot"):
+            raise BotFound("the callback query is from a bot")
+        chat_id = from_data.get("id")
+        message = payload.get("message")
+        message_id = message.get("message_id")
+        query_data = payload.get("data")
+        query_id = payload.get("id")
+        return process_callback_query(query_id, chat_id, query_data, message_id, db)
+    except Exception as e:
+        logger.error(f"serialize_callback_query failed:{e}")
 
 
 def process_callback_query(
     query_id: str, chat_id: str, query_data: str, message_id: str, db: Session
 ):
-    if query_data == "show terms for acceptance":
-        chat = get_chat_by_chat_id(db, chat_id)
-        if chat.accepted_terms:
-            return (
-                settings.telegram_process_callback_query_outputs.empty_answer_callback(
+    try:
+
+        if query_data == "show terms for acceptance":
+            chat = get_chat_by_chat_id(db, chat_id)
+            if chat.accepted_terms:
+                return settings.telegram_process_callback_query_outputs.empty_answer_callback(
                     query_id
                 )
+            return (
+                settings.telegram_process_callback_query_outputs.show_terms_condititons(
+                    chat_id, message_id
+                )
             )
-        return settings.telegram_process_callback_query_outputs.show_terms_condititons(
-            chat_id, message_id
-        )
 
-    if query_data == "read the terms":
-        return settings.telegram_process_callback_query_outputs.terms_and_conditions(
-            chat_id, message_id
-        )
+        if query_data == "read the terms":
+            return (
+                settings.telegram_process_callback_query_outputs.terms_and_conditions(
+                    chat_id, message_id
+                )
+            )
 
-    if query_data == "accepted terms":
-        update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-        return settings.telegram_process_callback_query_outputs.welcome_message(chat_id)
+        if query_data == "accepted terms":
+            update_chat_by_chat_id(db, chat_id, accepted_terms=True)
+            return settings.telegram_process_callback_query_outputs.welcome_message(
+                chat_id
+            )
 
-    else:
-        ...
+        else:
+            ...
+    except Exception as e:
+        logger.error(f"proccess_callback_query failed:{e}")
 
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
-    if data.text == "/start":
-        authentication_response = chat_first_level_authentication(db=db, data=chat)
-        if authentication_response is False:
-            return settings.telegram_process_text_outputs.authentication_failed(chat.id)
-        if authentication_response is True:
-            return settings.telegram_process_text_outputs.shop_options(chat.id)
-        else:
-            return authentication_response
-    logger.error("unsupported command")
+    try:
 
-    return settings.telegram_process_text_outputs.unsupported_command(chat.id)
+        if data.text == "/start":
+            first_lvl_authentication_response = chat_first_level_authentication(
+                db=db, data=chat
+            )
+            if first_lvl_authentication_response is True:
+                return settings.telegram_process_text_outputs.shop_options(chat.id)
+            else:
+                return first_lvl_authentication_response
+
+        return settings.telegram_process_text_outputs.unsupported_command(chat.id)
+    except Exception as e:
+        logger.error(f"procces_text failed:{e}")
 
 
 def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
@@ -118,15 +132,13 @@ def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] |
             )
         return True
     except Exception as e:
-        logger.error(f"chat first level authentication failed: {e}")
-        return False
+        logger.error(f"chat_first_level_authentication failed: {e}")
 
 
 def chat_second_lvl_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
-    first_auth_resutl = chat_first_level_authentication(db, data)
-    if first_auth_resutl is True:
-        try:
-
+    try:
+        first_auth_resutl = chat_first_level_authentication(db, data)
+        if first_auth_resutl is True:
             chat = get_chat_by_chat_id(db, chat_id=data.id)
             if not chat.phone_number:
                 return settings.telegram_process_text_outputs.phone_number_input(
@@ -137,7 +149,6 @@ def chat_second_lvl_authentication(db: Session, data: Chat) -> Dict[str, Any] | 
                     chat.chat_id
                 )
             return True
-        except Exception as e:
-            logger.error(f"chat second level authentication failed: {e}")
-        return False
-    return first_auth_resutl
+        return first_auth_resutl
+    except Exception as e:
+        logger.error(f"chat_second_level_authentication failed: {e}")
