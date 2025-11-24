@@ -66,7 +66,7 @@ def process_callback_query(
 
         if query_data == "show terms for acceptance":
             chat = get_chat_by_chat_id(db, chat_id)
-            if chat.accepted_terms:
+            if chat.accepted_terms is True:
                 return settings.telegram_process_callback_query_outputs.empty_answer_callback(
                     query_id
                 )
