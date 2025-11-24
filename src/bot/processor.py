@@ -78,10 +78,7 @@ def process_callback_query(
 
     if query_data == "accepted terms":
         update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-        return {
-            "chat_id": chat_id,
-            "text": "text",
-        }  #! this should go to the commands help guide . go to the blue bot for guidance
+        return settings.telegram_process_callback_query_outputs.welcome_message(chat_id)
 
     else:
         ...
@@ -89,7 +86,7 @@ def process_callback_query(
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     if data.text == "/start":
-        authentication_response = chat_authentication(db=db, data=chat)
+        authentication_response = chat_first_level_authentication(db=db, data=chat)
         if authentication_response is False:
             return settings.telegram_process_text_outputs.authentication_failed(chat.id)
         if authentication_response is True:
@@ -101,7 +98,7 @@ def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     return settings.telegram_process_text_outputs.unsupported_command(chat.id)
 
 
-def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
+def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
     try:
 
         chat = get_chat_by_chat_id(db, chat_id=data.id)
@@ -119,15 +116,28 @@ def chat_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
             return settings.telegram_process_text_outputs.terms_and_conditions(
                 chat.chat_id
             )
-        if not chat.phone_number:
-            return settings.telegram_process_text_outputs.phone_number_input(
-                chat.chat_id
-            )
-        if not chat.phone_number_validated:
-            settings.telegram_process_text_outputs.phone_number_verfication(
-                chat.chat_id
-            )
         return True
     except Exception as e:
-        logger.error(f"chat authentication failed: {e}")
+        logger.error(f"chat first level authentication failed: {e}")
         return False
+
+
+def chat_second_lvl_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
+    first_auth_resutl = chat_first_level_authentication(db, data)
+    if first_auth_resutl is True:
+        try:
+
+            chat = get_chat_by_chat_id(db, chat_id=data.id)
+            if not chat.phone_number:
+                return settings.telegram_process_text_outputs.phone_number_input(
+                    chat.chat_id
+                )
+            if not chat.phone_number_validated:
+                settings.telegram_process_text_outputs.phone_number_verfication(
+                    chat.chat_id
+                )
+            return True
+        except Exception as e:
+            logger.error(f"chat second level authentication failed: {e}")
+        return False
+    return first_auth_resutl

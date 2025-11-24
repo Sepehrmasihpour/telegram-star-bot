@@ -192,6 +192,13 @@ class TelegramProcessCallbackQueryOutput:
             },
         }
 
+    @staticmethod
+    def welcome_message(chat_id: Union[str, id]):
+        return {
+            "chat_id": chat_id,
+            "text": "the terms and condtionns has been accepted.\nwelcome now you can use all the features.\n The commands:\nthe command /buy for purchasing of products. \nthe command /prices for seeing the prices. \nthe command /support for support\n\n the command /start for returning to main menu",
+        }
+
 
 class Settings(BaseSettings):
     """Env configuration.
