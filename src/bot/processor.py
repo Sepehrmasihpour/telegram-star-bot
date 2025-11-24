@@ -78,7 +78,10 @@ def process_callback_query(
 
     if query_data == "accepted terms":
         update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-        return {"chat_id": chat_id, "text": "text"}
+        return {
+            "chat_id": chat_id,
+            "text": "text",
+        }  #! this should go to the commands help guide . go to the blue bot for guidance
 
     else:
         ...
