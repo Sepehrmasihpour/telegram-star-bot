@@ -225,6 +225,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     if callback_query is not None:
         try:
             response_params = serialize_callback_query(payload=callback_query, db=db)
+            logger.info(response_params)
         except Exception as e:
             logger.error("seraializing_callback_query failed: %s", e)
             return {"ok": False, "error": "serializing callback failed"}
