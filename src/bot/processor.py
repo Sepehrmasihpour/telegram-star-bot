@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union
+from typing import Dict, Any
 from src.bot.models import Chat, Text
 from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_id
 from sqlalchemy.orm import Session
@@ -24,6 +24,10 @@ class BotFound(PermissionError):
 
 
 class UnsuportedTextInput(ValueError):
+    pass
+
+
+class ChatNotCreated(SystemError):
     pass
 
 
@@ -148,13 +152,12 @@ def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] |
 
         chat = get_chat_by_chat_id(db, chat_id=data.id)
         if chat is None:
-            create_chat(
+            new_chat = create_chat(
                 db, chat_id=data.id, first_name=data.first_name, username=data.username
             )
 
-            # if new_chat is None:
-            #     logger.error("failed to create chat during authentication")
-            #     return False
+            if new_chat is None:
+                raise ChatNotCreated("failed to create chat during authentication")
 
             return settings.telegram_process_text_outputs.terms_and_conditions(data.id)
         if not chat.accepted_terms:
