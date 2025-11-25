@@ -21,6 +21,8 @@ class Chat(Base):
     last_time_verfication_code_sent: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, server_default=None
     )
+    pending_action: Mapped[str | None] = mapped_column(String, nullable=True)
+    phone_input_attempt: Mapped[int] = mapped_column(Integer, server_default="0")
     __table_args__ = (UniqueConstraint("phone_number", name="uq_chats_phone_number"),)
 
 

@@ -1,10 +1,10 @@
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from src.bot.models import Chat, Text
 from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_id
 from sqlalchemy.orm import Session
 from src.config import logger
-from pydantic import ValidationError
 from src.config import settings
+import re
 
 
 class NotPrivateChat(ValueError):
@@ -23,27 +23,25 @@ class BotFound(PermissionError):
     pass
 
 
+class UnsuportedTextInput(ValueError):
+    pass
+
+
 def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
-
-    chat_data = payload.get("chat") or {}
-    from_data = payload.get("from") or {}
-
-    if chat_data.get("type") != "private":
-        raise NotPrivateChat("Only private chats are supported.")
-
-    if chat_data.get("id") != from_data.get("id"):
-        raise NotPrivateChat("chat.id and from.id must match for private messages.")
-
-    chat = Chat(**chat_data)
-
     try:
+        chat_data = payload.get("chat") or {}
+        from_data = payload.get("from") or {}
+        if chat_data.get("type") != "private":
+            raise NotPrivateChat("Only private chats are supported.")
+        if chat_data.get("id") != from_data.get("id"):
+            raise NotPrivateChat("chat.id and from.id must match for private messages.")
+        chat = Chat(**chat_data)
         data = Text(**payload)
-    except ValidationError:
-        return {"chat_id": chat_data.get("id"), "text": "un supported command"}
-    return process_text(chat, data, db)
+        return process_text(chat, data, db)
+    except Exception as e:
+        logger.error(f"serialize_message failed:{e}")
 
 
-#! this looks iffy to me find out if needs more error handling
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     try:
         from_data = payload.get("from") or {}
@@ -64,7 +62,7 @@ def process_callback_query(
 ):
     try:
 
-        if query_data == "show terms for acceptance":
+        if query_data == "show_terms_for_acceptance":
             chat = get_chat_by_chat_id(db, chat_id)
             if chat.accepted_terms is True:
                 return settings.telegram_process_callback_query_outputs.empty_answer_callback(
@@ -76,14 +74,14 @@ def process_callback_query(
                 )
             )
 
-        if query_data == "read the terms":
+        if query_data == "read_the_terms":
             return (
                 settings.telegram_process_callback_query_outputs.terms_and_conditions(
                     chat_id, message_id
                 )
             )
 
-        if query_data == "accepted terms":
+        if query_data == "accepted_terms":
             update_chat_by_chat_id(db, chat_id, accepted_terms=True)
             return settings.telegram_process_callback_query_outputs.welcome_message(
                 chat_id
@@ -97,17 +95,50 @@ def process_callback_query(
 
 def process_text(chat: Chat, data: Text, db: Session) -> Dict[str, Any]:
     try:
-
-        if data.text == "/start":
-            first_lvl_authentication_response = chat_first_level_authentication(
-                db=db, data=chat
-            )
-            if first_lvl_authentication_response is True:
-                return settings.telegram_process_text_outputs.shop_options(chat.id)
+        chat_data = get_chat_by_chat_id(db, chat.id)
+        if chat_data is None or chat_data.pending_action is None:
+            if data.text == "/start":
+                output = settings.telegram_process_text_outputs.shop_options(chat.id)
+                return ultimate_authntication(db, chat, output)
+            if data.text == "/buy":
+                output = settings.telegram_process_text_outputs.shop_options(chat.id)
+                ultimate_authntication(db, chat, output)
+            if data == "/prices":
+                return settings.telegram_process_text_outputs.prices(chat.id)
+            if data == "/support":
+                return settings.telegram_process_text_outputs.support(chat.id)
             else:
-                return first_lvl_authentication_response
+                raise UnsuportedTextInput("unsupported command or text input")
+        if chat_data.pending_action == "waiting_for_phone_number":
+            valid_phone_number = phone_number_authenticator(data)
+            if not valid_phone_number:
+                attempts = chat_data.phone_input_attempt
+                if attempts >= 3:
+                    update_chat_by_chat_id(
+                        db, chat.id, phone_input_attempt=0, pending_action=None
+                    )
+                    return settings.telegram_process_text_outputs.phone_max_attempt(
+                        chat.id
+                    )
+                update_chat_by_chat_id(db, chat.id, phone_input_attempt=attempts + 1)
+                return settings.telegram_process_text_outputs.invalid_phone_number(
+                    chat.id
+                )
+            update_chat_by_chat_id(
+                db,
+                chat.id,
+                phone_input_attempt=0,
+                phone_number=data,
+                pending_action="waiting_for_otp",
+            )
+            return settings.telegram_process_text_outputs.phone_numebr_verification(
+                chat.id
+            )
+        if chat_data.pending_action == "waiting_for_otp":
+            if data != "1111":
+                return settings.telegram_process_text_outputs.invalid_otp(chat.id)
+            return settings.telegram_process_text_outputs.phone_number_verified(chat.id)
 
-        return settings.telegram_process_text_outputs.unsupported_command(chat.id)
     except Exception as e:
         logger.error(f"procces_text failed:{e}")
 
@@ -137,18 +168,40 @@ def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] |
 
 def chat_second_lvl_authentication(db: Session, data: Chat) -> Dict[str, Any] | bool:
     try:
-        first_auth_resutl = chat_first_level_authentication(db, data)
-        if first_auth_resutl is True:
+        first_auth_resutlt = chat_first_level_authentication(db, data)
+        if first_auth_resutlt is True:
             chat = get_chat_by_chat_id(db, chat_id=data.id)
             if not chat.phone_number:
+                update_chat_by_chat_id(
+                    db, data.id, pending_action="waiting_for_phone_number"
+                )
                 return settings.telegram_process_text_outputs.phone_number_input(
                     chat.chat_id
                 )
             if not chat.phone_number_validated:
-                settings.telegram_process_text_outputs.phone_number_verfication(
+                settings.telegram_process_text_outputs.phone_number_verfication_needed(
                     chat.chat_id
                 )
             return True
-        return first_auth_resutl
+        return first_auth_resutlt
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
+
+
+def ultimate_authntication(db: Session, data: Chat, output: Dict) -> Union[Dict, bool]:
+    first_lvl_authentication_response = chat_first_level_authentication(
+        db=db, data=data
+    )
+    if first_lvl_authentication_response is True:
+        second_lvl_authectication_response = chat_second_lvl_authentication(db, data)
+        if second_lvl_authectication_response is True:
+            return output
+        else:
+            return second_lvl_authectication_response
+    else:
+        return first_lvl_authentication_response
+
+
+def phone_number_authenticator(phone: str) -> bool:
+    pattern = r"^09\d{9}$"
+    return bool(re.match(pattern, phone))

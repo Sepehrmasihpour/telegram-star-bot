@@ -175,6 +175,17 @@ async def telegram_edit_messages_text(
     return {"ok": True}
 
 
+async def calculate_prices(chat_id: Union[str, int]) -> Union[Dict, None]:
+    # * here the prices will be calucalated asynrounously for now I just put a placeholder
+    try:
+        return {
+            "chat_id": chat_id,
+            "text": "hese are the prices\nprice1\nprice2\nprice2\nprice3",
+        }
+    except Exception as e:
+        logger.error(f"claculate_price failed:{e}")
+
+
 # ---------- Webhook endpoint ----------
 @router.post(settings.endpoint)
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -220,8 +231,26 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             logger.error("Serialize_message/route failed: %s", e)
             return {"ok": False, "error": "serializing message failed"}
 
-        # 5) reply via Telegram sendMessage
-        return await telegram_send_message(request=request, payload=response_params)
+        if "method" not in response_params:
+            return await telegram_send_message(request=request, payload=response_params)
+        method = response_params.get("method")
+        if method == "calculatePrices":
+            try:
+                await telegram_answer_callback_query(
+                    request=request,
+                    payload={
+                        response_params.get("params")
+                    },  # * this will send a loading message to the user as the price caluclation might take a second
+                )
+                prices_payload = await calculate_prices(
+                    response_params.get("params").get("chat_id")
+                )
+                return await telegram_send_message(
+                    request=request, payload=prices_payload
+                )
+            except Exception as e:
+                logger.error("calculatePrices failed:%s", e)
+                return {"ok": False, "error": "calculating prices failed"}
     if callback_query is not None:
         try:
             response_params = serialize_callback_query(payload=callback_query, db=db)

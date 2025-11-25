@@ -44,11 +44,11 @@ class TelegramProcessTextOutputs:
             "text": "به ربات تست خوش آمدید",
             "reply_markup": {
                 "inline_keyboard": [
-                    [{"text": "خرید جنس 1", "callback_data": "buy product 1"}],
-                    [{"text": "خرید جنس 2", "callback_data": "buy product 2"}],
-                    [{"text": "خرید جنس 3", "callback_data": "buy product 3"}],
-                    [{"text": "قیمت های محصولات", "callback_data": "show prices"}],
-                    [{"text": "مشاهده قوانین", "callback_data": "show terms"}],
+                    [{"text": "خرید جنس 1", "callback_data": "buy_product_1"}],
+                    [{"text": "خرید جنس 2", "callback_data": "buy_product_2"}],
+                    [{"text": "خرید جنس 3", "callback_data": "buy_product_3"}],
+                    [{"text": "قیمت های محصولات", "callback_data": "show_prices"}],
+                    [{"text": "مشاهده قوانین", "callback_data": "show_terms"}],
                     [{"text": "پشتیبانی", "callback_data": "support"}],
                 ]
             },
@@ -70,17 +70,13 @@ class TelegramProcessTextOutputs:
                 """
                             به ربات تست خوش آمدید\n
                             برای شروع، لطفا شماره تلفن خود را وارد کنید\n
-                            • شماره را با فرمت 09123456789 وارد کنید b 
+                            • شماره را با فرمت 09123456789 وارد کنید  
                             """
             ),
-            "reply_markup": {
-                "force_reply": True,
-                "input_field_placeholder": "09121753528",
-            },
         }
 
     @staticmethod
-    def phone_number_verfication(chat_id: Union[str, int]):
+    def phone_number_verfication_needed(chat_id: Union[str, int]):
 
         return {
             "chat_id": chat_id,
@@ -96,13 +92,13 @@ class TelegramProcessTextOutputs:
                     [
                         {
                             "text": "کد تایید بفرست",
-                            "callback_data": "send validation code",
+                            "callback_data": "send_validation_code",
                         }
                     ],
                     [
                         {
                             "text": "ویرایش شماره تلفن",
-                            "callback_data": "edit phone number",
+                            "callback_data": "edit_phone_number",
                         }
                     ],
                 ]
@@ -120,13 +116,13 @@ class TelegramProcessTextOutputs:
                     [
                         {
                             "text": "خواندم و موافقم",
-                            "callback_data": "accepted terms",
+                            "callback_data": "accepted_terms",
                         }
                     ],
                     [
                         {
                             "text": "مشاهده قوانین",
-                            "callback_data": "show terms for acceptance",
+                            "callback_data": "show_terms_for_acceptance",
                         }
                     ],
                 ]
@@ -138,6 +134,58 @@ class TelegramProcessTextOutputs:
         return {
             "chat_id": chat_id,
             "text": "authentication failed",
+        }
+
+    @staticmethod
+    def prices(chat_id: Union[str, int]):
+        return {
+            "method": "calculatePrices",
+            "params": {
+                "chat_id": chat_id,
+                "text": "در حال دریافت قیمت‌های محصولات...",
+            },
+        }
+
+    @staticmethod
+    def support(chat_id: Union[str, int]):
+        return {"chat_id": chat_id, "text": "this is the support section"}
+
+    @staticmethod
+    def phone_max_attempt(chat_id: Union[str, int]):
+        return {"chat_id": chat_id, "text": "failed 3 times. canceled"}
+
+    @staticmethod
+    def invalid_phone_number(chat_id: Union[str, int]):
+        return {"chat_id": chat_id, "text": "phone number is invalid"}
+
+    @staticmethod
+    def phone_numebr_verification(chat_id: Union[str, int]):
+        return {
+            "chat_id": chat_id,
+            "text": "the otp code has been sent to your phone number\ntype it here so that your phone number will be verified\nuntil I convince those uppity paranoird sons of cheap whores people at kavenegar\n this will not work so just type 1111",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "ویرایش شماره تلفن",
+                            "callback_data": "edit_phone_number",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
+    def invalid_otp(chat_id: Union[str, int]):
+        return {"chat_id": chat_id, "text": "invalid_otp"}
+
+    def phone_number_verified(chat_id: Union[str, int]):
+        return {
+            "method": "verifiedPhone",
+            "params": {
+                "chat_id": chat_id,
+                "text": "phone number verified now lets see the profucts.",
+            },
         }
 
 
@@ -159,7 +207,7 @@ class TelegramProcessCallbackQueryOutput:
                 "text": "these are the rules of this bot read them.",
                 "reply_markup": {
                     "inline_keyboard": [
-                        [{"text": "خواندم", "callback_data": "read the terms"}],
+                        [{"text": "خواندم", "callback_data": "read_the_terms"}],
                     ]
                 },
             },
@@ -178,13 +226,13 @@ class TelegramProcessCallbackQueryOutput:
                         [
                             {
                                 "text": "خواندم و موافقم",
-                                "callback_data": "accepted terms",
+                                "callback_data": "accepted_terms",
                             }
                         ],
                         [
                             {
                                 "text": "مشاهده قوانین",
-                                "callback_data": "show terms for acceptance",
+                                "callback_data": "show_terms_for_acceptance",
                             }
                         ],
                     ]
