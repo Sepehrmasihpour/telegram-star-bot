@@ -190,86 +190,97 @@ async def calculate_prices(chat_id: Union[str, int]) -> Union[Dict, None]:
 @router.post(settings.endpoint)
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     """Main webhook: receives updates, routes them, replies with sendMessage."""
-    logger.debug(
-        "Incoming connection from %s via host %s",
-        request.client.host,
-        request.headers.get("host"),
-    )
-
-    # 1) parse JSON
     try:
-        update = await request.json()
-    except JSONDecodeError as error:
-        logger.error("Invalid JSON: %s", error)
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST.value,
-            detail=HTTPStatus.BAD_REQUEST.phrase,
+
+        logger.debug(
+            "Incoming connection from %s via host %s",
+            request.client.host,
+            request.headers.get("host"),
         )
 
-    # 2) verify webhook secret (if enabled)
-    if not verify_secret_token(request):
-        logger.error("Forbidden: secret token mismatch")
-        raise HTTPException(
-            status_code=HTTPStatus.FORBIDDEN.value,
-            detail=HTTPStatus.FORBIDDEN.phrase,
-        )
-
-    # 3) pick a supported message container
-    message = (
-        update.get("message")
-        or update.get("edited_message")
-        or update.get("channel_post")
-    )
-
-    callback_query = update.get("callback_query")
-
-    # 4) route + build reply for message update
-    if message is not None:
+        # 1) parse JSON
         try:
-            response_params = serialize_message(message, db)
-        except Exception as e:
-            logger.error("Serialize_message/route failed: %s", e)
-            return {"ok": False, "error": "serializing message failed"}
+            update = await request.json()
+        except JSONDecodeError as error:
+            logger.error("Invalid JSON: %s", error)
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST.value,
+                detail=HTTPStatus.BAD_REQUEST.phrase,
+            )
 
-        if "method" not in response_params:
-            return await telegram_send_message(request=request, payload=response_params)
-        method = response_params.get("method")
-        if method == "calculatePrices":
+        # 2) verify webhook secret (if enabled)
+        if not verify_secret_token(request):
+            logger.error("Forbidden: secret token mismatch")
+            raise HTTPException(
+                status_code=HTTPStatus.FORBIDDEN.value,
+                detail=HTTPStatus.FORBIDDEN.phrase,
+            )
+
+        # 3) pick a supported message container
+        message = (
+            update.get("message")
+            or update.get("edited_message")
+            or update.get("channel_post")
+        )
+
+        callback_query = update.get("callback_query")
+
+        # 4) route + build reply for message update
+        if message is not None:
             try:
-                await telegram_answer_callback_query(
-                    request=request,
-                    payload={
-                        response_params.get("params")
-                    },  # * this will send a loading message to the user as the price caluclation might take a second
-                )
-                prices_payload = await calculate_prices(
-                    response_params.get("params").get("chat_id")
-                )
+                response_params = serialize_message(message, db)
+            except Exception as e:
+                logger.error("Serialize_message/route failed: %s", e)
+                return {"ok": False, "error": "serializing message failed"}
+
+            if "method" not in response_params:
                 return await telegram_send_message(
-                    request=request, payload=prices_payload
+                    request=request, payload=response_params
+                )
+            method = response_params.get("method")
+            if method == "calculatePrices":
+                try:
+                    await telegram_answer_callback_query(
+                        request=request,
+                        payload={
+                            response_params.get("params")
+                        },  # * this will send a loading message to the user as the price caluclation might take a second
+                    )
+                    prices_payload = await calculate_prices(
+                        response_params.get("params").get("chat_id")
+                    )
+                    return await telegram_send_message(
+                        request=request, payload=prices_payload
+                    )
+                except Exception as e:
+                    logger.error("calculatePrices failed:%s", e)
+                    return {"ok": False, "error": "calculating prices failed"}
+        if callback_query is not None:
+            try:
+                response_params = serialize_callback_query(
+                    payload=callback_query, db=db
                 )
             except Exception as e:
-                logger.error("calculatePrices failed:%s", e)
-                return {"ok": False, "error": "calculating prices failed"}
-    if callback_query is not None:
-        try:
-            response_params = serialize_callback_query(payload=callback_query, db=db)
-        except Exception as e:
-            logger.error("seraializing_callback_query failed: %s", e)
-            return {"ok": False, "error": "serializing callback failed"}
-        if "method" not in response_params:
-            return await telegram_send_message(request=request, payload=response_params)
-        method = response_params.get("method")
-        if method == "answerCallback":
-            return await telegram_answer_callback_query(
-                request=request, payload=response_params.get("params")
-            )
-        if method == "editMessageText":
-            return await telegram_edit_messages_text(
-                request=request, payload=response_params.get("params")
-            )
-    if message is None and callback_query is None:
-        # unsupported update types could be safely 200'd to avoid Telegram retries,
-        # but we'll return 422 to surface what's unsupported during dev
-        logger.info("Unsupported update type: %s", update.keys())
-        return {"ok": True, "ignored": True}  # 200 OK, no retry
+                logger.error("seraializing_callback_query failed: %s", e)
+                return {"ok": False, "error": "serializing callback failed"}
+            if "method" not in response_params:
+                return await telegram_send_message(
+                    request=request, payload=response_params
+                )
+            method = response_params.get("method")
+            if method == "answerCallback":
+                return await telegram_answer_callback_query(
+                    request=request, payload=response_params.get("params")
+                )
+            if method == "editMessageText":
+                return await telegram_edit_messages_text(
+                    request=request, payload=response_params.get("params")
+                )
+        if message is None and callback_query is None:
+            # unsupported update types could be safely 200'd to avoid Telegram retries,
+            # but we'll return 422 to surface what's unsupported during dev
+            logger.info("Unsupported update type: %s", update.keys())
+            return {"ok": True, "ignored": True}  # 200 OK, no retry
+    except Exception as e:
+        logger.exception("Unhandled error in telegram_webhook: %s", e)
+        return {"ok": False, "error": "internal error"}
