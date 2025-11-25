@@ -148,13 +148,13 @@ def chat_first_level_authentication(db: Session, data: Chat) -> Dict[str, Any] |
 
         chat = get_chat_by_chat_id(db, chat_id=data.id)
         if chat is None:
-            new_chat = create_chat(
+            create_chat(
                 db, chat_id=data.id, first_name=data.first_name, username=data.username
             )
 
-            if new_chat is None:
-                logger.error("failed to create chat during authentication")
-                return False
+            # if new_chat is None:
+            #     logger.error("failed to create chat during authentication")
+            #     return False
 
             return settings.telegram_process_text_outputs.terms_and_conditions(data.id)
         if not chat.accepted_terms:
@@ -188,7 +188,7 @@ def chat_second_lvl_authentication(db: Session, data: Chat) -> Dict[str, Any] | 
         logger.error(f"chat_second_level_authentication failed: {e}")
 
 
-def ultimate_authntication(db: Session, data: Chat, output: Dict) -> Union[Dict, bool]:
+def ultimate_authntication(db: Session, data: Chat, output: Dict) -> Dict:
     first_lvl_authentication_response = chat_first_level_authentication(
         db=db, data=data
     )
