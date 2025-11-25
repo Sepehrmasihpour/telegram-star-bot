@@ -277,8 +277,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     request=request, payload=response_params.get("params")
                 )
         if message is None and callback_query is None:
-            # unsupported update types could be safely 200'd to avoid Telegram retries,
-            # but we'll return 422 to surface what's unsupported during dev
             logger.info("Unsupported update type: %s", update.keys())
             return {"ok": True, "ignored": True}  # 200 OK, no retry
     except Exception as e:
