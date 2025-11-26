@@ -246,9 +246,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                             response_params.get("params")
                         },  # * this will send a loading message to the user as the price caluclation might take a second
                     )
-                    prices_payload = await calculate_prices(
-                        response_params.get("params").get("chat_id")
-                    )
+                    chat_id = response_params.get("params").get("chat_id")
+                    prices_payload = await calculate_prices(chat_id)
                     return await telegram_send_message(
                         request=request, payload=prices_payload
                     )
