@@ -240,7 +240,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             method = response_params.get("method")
             if method == "calculatePrices":
                 try:
-                    await telegram_answer_callback_query(
+                    await telegram_send_message(
                         request=request,
                         payload={
                             response_params.get("params")
