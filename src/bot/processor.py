@@ -12,18 +12,6 @@ class NotPrivateChat(ValueError):
     pass
 
 
-class CallbackQueryFromNonUser(LookupError):
-    pass
-
-
-class UserAlreadyAcceptedTerms(KeyError):
-    pass
-
-
-class BotFound(PermissionError):
-    pass
-
-
 class UnsuportedTextInput(ValueError):
     pass
 
@@ -51,8 +39,6 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     try:
         from_data = payload.get("from") or {}
-        if from_data.get("is_bot"):
-            raise BotFound("the callback query is from a bot")
         chat_id = from_data.get("id")
         message = payload.get("message")
         message_id = message.get("message_id")
@@ -109,25 +95,25 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
             if data.text == "/start":
                 return (
                     settings.telegram_process_text_outputs.shop_options(chat.id)
-                    if auth_result
+                    if auth_result is True
                     else auth_result
                 )
             if data.text == "/buy":
                 return (
                     settings.telegram_process_text_outputs.shop_options(chat.id)
-                    if auth_result
+                    if auth_result is True
                     else auth_result
                 )
             if data.text == "/prices":
                 return (
                     settings.telegram_process_text_outputs.prices(chat.id)
-                    if auth_result
+                    if auth_result is True
                     else auth_result
                 )
             if data.text == "/support":
                 return (
                     settings.telegram_process_text_outputs.support(chat.id)
-                    if auth_result
+                    if auth_result is True
                     else auth_result
                 )
             else:
