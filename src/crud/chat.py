@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from src.models.chat import Chat
-from typing import Optional, Dict, Any
+from typing import Optional, Any
 from src.config import logger
 
 
@@ -17,15 +17,15 @@ def create_chat(
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"failed to create chat: {e}")
-        return None
+        raise
 
 
 def get_chat_by_chat_id(db: Session, chat_id: int) -> Chat | None:
     try:
         return db.query(Chat).filter(Chat.chat_id == chat_id).first()
-    except SQLAlchemyError as e:
-        logger.error(f"failed to fetch chat: {e}")
-        return None
+    except SQLAlchemyError:
+        logger.exception("failed to fetch chat by chat_id=%s", chat_id)
+        raise
 
 
 def get_chat_by_id(db: Session, id: int) -> Chat | None:
@@ -33,19 +33,21 @@ def get_chat_by_id(db: Session, id: int) -> Chat | None:
         return db.get(Chat, id)
     except SQLAlchemyError as e:
         logger.error(f"failed to fetch chat: {e}")
-        return None
+        raise
 
 
-def update_chat(db: Session, id: int, data: Dict) -> Chat | None:
+def update_chat(db: Session, id: int, **fields: Any) -> Chat | None:
     try:
         chat = db.get(Chat, id)
         if not chat:
-            logger.error("no such chat exists")
+            logger.info("update_chat: no chat with id=%s", id)
             return None
 
-        for key, value in data.items():
+        for key, value in Any.items():
             if hasattr(chat, key):
                 setattr(chat, key, value)
+            else:
+                raise AttributeError(f"Chat has no attribute '{key}'")
 
         db.commit()
         db.refresh(chat)
@@ -54,12 +56,11 @@ def update_chat(db: Session, id: int, data: Dict) -> Chat | None:
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"failed to update chat: {e}")
-        return None
+        raise
 
 
 def update_chat_by_chat_id(db: Session, chat_id: int, **fields: Any):
     try:
-
         chat = db.query(Chat).filter(Chat.chat_id == chat_id).first()
 
         if chat is None:
@@ -77,23 +78,23 @@ def update_chat_by_chat_id(db: Session, chat_id: int, **fields: Any):
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"failed to update chat: {e}")
-        return None
+        raise
 
 
 def delete_chat_by_id(db: Session, id: int) -> bool:
     try:
         chat = db.get(Chat, id)
         if not chat:
-            logger.error("no such chat exists")
+            logger.info("delete_chat_by_id: no chat with id=%s", id)
             return False
 
         db.delete(chat)
         db.commit()
         return True
 
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.rollback()
-        logger.error(f"failed to delete chat: {e}")
+        logger.exception("failed to delete chat by id=%s", id)
         return False
 
 
@@ -101,14 +102,14 @@ def delete_chat_by_chat_id(db: Session, chat_id: int) -> bool:
     try:
         chat = db.query(Chat).filter(Chat.chat_id == chat_id).first()
         if not chat:
-            logger.error("no such chat exists")
+            logger.info("delete_chat_by_chat_id: no chat with chat_id=%s", chat_id)
             return False
 
         db.delete(chat)
         db.commit()
         return True
 
-    except SQLAlchemyError as e:
+    except SQLAlchemyError:
         db.rollback()
-        logger.error(f"failed to delete chat: {e}")
+        logger.exception("failed to delete chat by chat_id=%s", chat_id)
         return False

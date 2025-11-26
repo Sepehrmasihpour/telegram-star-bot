@@ -179,6 +179,7 @@ class TelegramProcessTextOutputs:
     def invalid_otp(chat_id: Union[str, int]):
         return {"chat_id": chat_id, "text": "invalid_otp"}
 
+    @staticmethod
     def phone_number_verified(chat_id: Union[str, int]):
         return {
             "method": "verifiedPhone",
