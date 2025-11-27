@@ -4,10 +4,10 @@ from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_
 from sqlalchemy.orm import Session
 from src.config import logger
 from src.models import Chat
-from bot.process_output import (
+from src.bot.process_output import (
     callback_output as callback_output,
 )
-from bot.process_output import text_output as text_output
+from src.bot.process_output import text_output as text_output
 import re
 
 
