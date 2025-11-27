@@ -7,9 +7,10 @@ class TelegramProcessTextOutputs:
         return {
             "chat_id": chat_id,
             "text": """
-🌟welcome to the test bot!\n
-💡to buy product no1, product no2, product no3, press the relevent button.
-""",
+                🌟welcome to the test bot!
+                
+                💡to buy product no1, product no2, product no3, press the relevent button.
+                """,
             "reply_markup": {
                 "inline_keyboard": [
                     [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
