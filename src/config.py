@@ -230,33 +230,26 @@ class TelegramProcessCallbackQueryOutput:
                 "message_id": message_id,
                 "text": """
 📜Terms of service agreement\n
-\n
 🔰Terms of Using the Test Bot:\n
-\n
 1️⃣General Rules:\n
 • This service is intended for purchasing Telegram Stars and Telegram Premium\n
 • The user is required to provide accurate and complete information\n
 • Any misuse of the service is prohibited\n
-\n
 2️⃣Payment Rules:\n
 • Payments are non-refundable\n
 • By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered\n
-\n
 3️⃣Privacy:\n
 • Your personal information will be kept confidential\n
 • The information is used for identity and payment verification\n
 • Information will not be shared with any third party\n
-\n
 4️⃣Responsibilities:\n
 • We are committed to delivering products intact and on time\n
 • The user is responsible for the accuracy of the information they provide\n
 • Any form of fraud will result in being banned from the service\n
-\n
 5️⃣Support:\n
 • 24/7 support is available to you\n
 • Response time: up to 2 hours\n
 • Support contact: @TestSupport
-\n
 \n
 ⚠️Note: By using this service, you accept all of the above terms
                 """,
