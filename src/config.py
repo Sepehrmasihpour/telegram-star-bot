@@ -44,12 +44,12 @@ class TelegramProcessTextOutputs:
             "text": "به ربات تست خوش آمدید",
             "reply_markup": {
                 "inline_keyboard": [
-                    [{"text": "خرید جنس 1", "callback_data": "buy_product_1"}],
-                    [{"text": "خرید جنس 2", "callback_data": "buy_product_2"}],
-                    [{"text": "خرید جنس 3", "callback_data": "buy_product_3"}],
-                    [{"text": "قیمت های محصولات", "callback_data": "show_prices"}],
-                    [{"text": "مشاهده قوانین", "callback_data": "show_terms"}],
-                    [{"text": "پشتیبانی", "callback_data": "support"}],
+                    [{"text": "product no1", "callback_data": "buy_product_1"}],
+                    [{"text": "product no2", "callback_data": "buy_product_2"}],
+                    [{"text": "product no3", "callback_data": "buy_product_3"}],
+                    [{"text": "product no4", "callback_data": "show_prices"}],
+                    [{"text": "show terms of service", "callback_data": "show_terms"}],
+                    [{"text": "support", "callback_data": "support"}],
                 ]
             },
         }
@@ -58,7 +58,7 @@ class TelegramProcessTextOutputs:
     def unsupported_command(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
-            "text": "دستور پشتیبانی نمی‌شود.",
+            "text": "command not supported",
         }
 
     @staticmethod
@@ -68,9 +68,20 @@ class TelegramProcessTextOutputs:
             "chat_id": chat_id,
             "text": (
                 """
-                            به ربات تست خوش آمدید\n
-                            برای شروع، لطفا شماره تلفن خود را وارد کنید\n
-                            • شماره را با فرمت 09123456789 وارد کنید  
+                        🌟welcome to the testing bot!\n
+                        📱to start please enter you'r phone number\n
+                        .enter the phone number with the 09121764237 format\n
+                        .the phone number must belong to you\n
+                        .this phone number is used for verifying your identity and direct payment\n
+                        \n
+                        💡keep note:
+                        .your phone number will remain safe and secret\n
+                        .it will only be used for verifying your identity and payment\n
+                        .you can change it at any time\n
+                        \n
+                        🔐security:
+                        .all your infromation is stored using encryption\n
+                        .no data will be shared with a third party
                             """
             ),
         }
@@ -82,22 +93,22 @@ class TelegramProcessTextOutputs:
             "chat_id": chat_id,
             "text": (
                 """
-                            شماره تلفن تایید نشده\n
-                            برای ادامه باید شماره تایید بشه\n
-                            آیا میخواهید کد تایید بفرستیم یا شمارتونو عوض کنید؟
-                            """
+                ❌you'r phone number has not been verified\n
+                📱in order to continue please verify your phone number\n
+
+                """
             ),
             "reply_markup": {
                 "inline_keyboard": [
                     [
                         {
-                            "text": "کد تایید بفرست",
+                            "text": "📱send verificaton code",
                             "callback_data": "send_validation_code",
                         }
                     ],
                     [
                         {
-                            "text": "ویرایش شماره تلفن",
+                            "text": "📝Edit phone number",
                             "callback_data": "edit_phone_number",
                         }
                     ],
@@ -110,18 +121,18 @@ class TelegramProcessTextOutputs:
 
         return {
             "chat_id": chat_id,
-            "text": "I have read the terms and services and agree accept them",
+            "text": "By using the test bot you are obligated to follow our terms of service if you agree to the terms press the 'agree and accept' button",
             "reply_markup": {
                 "inline_keyboard": [
                     [
                         {
-                            "text": "خواندم و موافقم",
+                            "text": "✅I agree and accept",
                             "callback_data": "accepted_terms",
                         }
                     ],
                     [
                         {
-                            "text": "مشاهده قوانین",
+                            "text": "📜See terms of service",
                             "callback_data": "show_terms_for_acceptance",
                         }
                     ],
@@ -142,7 +153,7 @@ class TelegramProcessTextOutputs:
             "method": "calculatePrices",
             "params": {
                 "chat_id": chat_id,
-                "text": "در حال دریافت قیمت‌های محصولات...",
+                "text": "🔍Getting the most recent up to date prices...",
             },
         }
 
@@ -162,12 +173,21 @@ class TelegramProcessTextOutputs:
     def phone_numebr_verification(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
-            "text": "the otp code has been sent to your phone number\ntype it here so that your phone number will be verified\nuntil I convince those uppity paranoird sons of cheap whores people at kavenegar\n this will not work so just type 1111",
+            "text": """
+                ✅the verification code has been sent to your phone number. please enter the code\n
+                \n
+                💳important points about bank acounts:\n
+                .The acount that you use for payment must belong to the owner of the phone number\n
+                .The  system verifies weather the phone number and the acount number belong to the same person\n
+                .In case they don't, you'r payment will not go through\n
+                .If the acount belongs to someone else, please use another acount
+                
+            """,
             "reply_markup": {
                 "inline_keyboard": [
                     [
                         {
-                            "text": "ویرایش شماره تلفن",
+                            "text": "📝Edit phone number",
                             "callback_data": "edit_phone_number",
                         }
                     ],
@@ -177,7 +197,7 @@ class TelegramProcessTextOutputs:
 
     @staticmethod
     def invalid_otp(chat_id: Union[str, int]):
-        return {"chat_id": chat_id, "text": "invalid_otp"}
+        return {"chat_id": chat_id, "text": "❌invalid verification code"}
 
     @staticmethod
     def phone_number_verified(chat_id: Union[str, int]):
@@ -185,7 +205,10 @@ class TelegramProcessTextOutputs:
             "method": "verifiedPhone",
             "params": {
                 "chat_id": chat_id,
-                "text": "phone number verified now lets see the profucts.",
+                "text": """
+                ✅phone number successfully verified!\n
+                🌟Showing the products...
+                """,
             },
         }
 
@@ -245,7 +268,18 @@ class TelegramProcessCallbackQueryOutput:
     def welcome_message(chat_id: Union[str, id]):
         return {
             "chat_id": chat_id,
-            "text": "the terms and condtionns has been accepted.\nwelcome now you can use all the features.\n The commands:\nthe command /buy for purchasing of products. \nthe command /prices for seeing the prices. \nthe command /support for support\n\n the command /start for returning to main menu",
+            "text": """
+            ✅the terms and condtionns has been accepted!\n
+            \n
+            🎉welcome! now you can use all the features\n
+            \n
+            💡To begin:\n
+            .the command /buy for purchasing of products.\n
+            .the command /prices for seeing the prices.\n
+            .the command /support for support\n
+            \n
+            🔁the command /start for returning to main menu
+            """,
         }
 
 
