@@ -3,12 +3,11 @@ from src.bot.models import TgChat, Text
 from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_id
 from sqlalchemy.orm import Session
 from src.config import logger
-from src.config import settings
 from src.models import Chat
 from bot.process_output import (
-    telegram_process_callback_query_outputs,
-    telegram_process_text_outputs,
+    callback_output as callback_output,
 )
+from bot.process_output import text_output as text_output
 import re
 
 
@@ -62,21 +61,15 @@ def process_callback_query(
         if query_data == "show_terms_for_acceptance":
             chat = get_chat_by_chat_id(db, chat_id)
             if chat.accepted_terms is True:
-                return telegram_process_callback_query_outputs.empty_answer_callback(
-                    query_id
-                )
-            return telegram_process_callback_query_outputs.show_terms_condititons(
-                chat_id, message_id
-            )
+                return callback_output.empty_answer_callback(query_id)
+            return callback_output.show_terms_condititons(chat_id, message_id)
 
         if query_data == "read_the_terms":
-            return telegram_process_callback_query_outputs.terms_and_conditions(
-                chat_id, message_id
-            )
+            return callback_output.terms_and_conditions(chat_id, message_id)
 
         if query_data == "accepted_terms":
             update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-            return telegram_process_callback_query_outputs.welcome_message(chat_id)
+            return callback_output.welcome_message(chat_id)
 
         else:
             ...
@@ -92,27 +85,23 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
             auth_result = chat_first_level_authentication(db, chat, chat_data)
             if data.text == "/start":
                 return (
-                    telegram_process_text_outputs.shop_options(chat.id)
+                    text_output.shop_options(chat.id)
                     if auth_result is True
                     else auth_result
                 )
             if data.text == "/buy":
                 return (
-                    telegram_process_text_outputs.shop_options(chat.id)
+                    text_output.shop_options(chat.id)
                     if auth_result is True
                     else auth_result
                 )
             if data.text == "/prices":
                 return (
-                    telegram_process_text_outputs.prices(chat.id)
-                    if auth_result is True
-                    else auth_result
+                    text_output.prices(chat.id) if auth_result is True else auth_result
                 )
             if data.text == "/support":
                 return (
-                    telegram_process_text_outputs.support(chat.id)
-                    if auth_result is True
-                    else auth_result
+                    text_output.support(chat.id) if auth_result is True else auth_result
                 )
             else:
                 raise UnsuportedTextInput("unsupported command or text input")
@@ -124,9 +113,9 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
                     update_chat_by_chat_id(
                         db, chat.id, phone_input_attempt=0, pending_action=None
                     )
-                    return telegram_process_text_outputs.phone_max_attempt(chat.id)
+                    return text_output.phone_max_attempt(chat.id)
                 update_chat_by_chat_id(db, chat.id, phone_input_attempt=attempts + 1)
-                return telegram_process_text_outputs.invalid_phone_number(chat.id)
+                return text_output.invalid_phone_number(chat.id)
             update_chat_by_chat_id(
                 db,
                 chat.id,
@@ -134,11 +123,11 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
                 phone_number=data.text,
                 pending_action="waiting_for_otp",
             )
-            return telegram_process_text_outputs.phone_numebr_verification(chat.id)
+            return text_output.phone_numebr_verification(chat.id)
         if chat_data.pending_action == "waiting_for_otp":
             if data.text != "1111":
-                return telegram_process_text_outputs.invalid_otp(chat.id)
-            return telegram_process_text_outputs.phone_number_verified(chat.id)
+                return text_output.invalid_otp(chat.id)
+            return text_output.phone_number_verified(chat.id)
 
     except Exception as e:
         logger.error(f"procces_text failed:{e}")
@@ -156,9 +145,9 @@ def chat_first_level_authentication(
                 db, chat_id=data.id, first_name=data.first_name, username=data.username
             )
 
-            return telegram_process_text_outputs.terms_and_conditions(data.id)
+            return text_output.terms_and_conditions(data.id)
         if not chat.accepted_terms:
-            return telegram_process_text_outputs.terms_and_conditions(chat.chat_id)
+            return text_output.terms_and_conditions(chat.chat_id)
         return True
     except Exception as e:
         logger.error(f"chat_first_level_authentication failed: {e}")
@@ -174,11 +163,9 @@ def chat_second_lvl_authentication(
             update_chat_by_chat_id(
                 db, data.id, pending_action="waiting_for_phone_number"
             )
-            return telegram_process_text_outputs.phone_number_input(chat.chat_id)
+            return text_output.phone_number_input(chat.chat_id)
         if not chat.phone_number_validated:
-            return telegram_process_text_outputs.phone_number_verfication_needed(
-                chat.chat_id
-            )
+            return text_output.phone_number_verfication_needed(chat.chat_id)
         return True
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
