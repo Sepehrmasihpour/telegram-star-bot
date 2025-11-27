@@ -293,16 +293,13 @@ class TelegramProcessCallbackQueryOutput:
         return {
             "chat_id": chat_id,
             "text": """
-    ✅the terms and condtionns has been accepted!\n
-    \n
-    🎉welcome! now you can use all the features\n
-    \n
-    💡To begin:\n
-    .the command /buy for purchasing of products.\n
-    .the command /prices for seeing the prices.\n
-    .the command /support for support\n
-    \n
-    🔁the command /start for returning to main menu
+✅the terms and condtionns has been accepted!
+🎉welcome! now you can use all the features
+💡To begin:
+.the command /buy for purchasing of products.
+.the command /prices for seeing the prices.
+.the command /support for support
+🔁the command /start for returning to main menu
             """,
         }
 
