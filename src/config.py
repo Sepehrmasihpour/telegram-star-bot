@@ -230,24 +230,24 @@ class TelegramProcessCallbackQueryOutput:
 🔰Terms of Using the Test Bot:
 \n
 1️⃣General Rules:
-• This service is intended for purchasing Telegram Stars and Telegram Premium
-• The user is required to provide accurate and complete information
-• Any misuse of the service is prohibited
+• This service is intended for purchasing Telegram Stars and Telegram Premium.
+• The user is required to provide accurate and complete information.
+• Any misuse of the service is prohibited.\n
 2️⃣Payment Rules:
-• Payments are non-refundable
-• By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered
+• Payments are non-refundable.
+• By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered.\n
 3️⃣Privacy:
-• Your personal information will be kept confidential
-• The information is used for identity and payment verification
-• Information will not be shared with any third party
+• Your personal information will be kept confidential.
+• The information is used for identity and payment verification.
+• Information will not be shared with any third party.\n
 4️⃣Responsibilities:
-• We are committed to delivering products intact and on time
-• The user is responsible for the accuracy of the information they provide
-• Any form of fraud will result in being banned from the service
+• We are committed to delivering products intact and on time.
+• The user is responsible for the accuracy of the information they provide.
+• Any form of fraud will result in being banned from the service.\n
 5️⃣Support:
-• 24/7 support is available to you
-• Response time: up to 2 hours
-• Support contact: @TestSupport
+• 24/7 support is available to you.
+• Response time: up to 2 hours.
+• Support contact: @TestSupport.
 \n
 ⚠️Note: By using this service, you accept all of the above terms
                 """,
