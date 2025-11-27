@@ -68,20 +68,18 @@ class TelegramProcessTextOutputs:
             "chat_id": chat_id,
             "text": (
                 """
-                        🌟welcome to the testing bot!\n
-                        📱to start please enter you'r phone number\n
-                        .enter the phone number with the 09121764237 format\n
-                        .the phone number must belong to you\n
-                        .this phone number is used for verifying your identity and direct payment\n
-                        \n
-                        💡keep note:
-                        .your phone number will remain safe and secret\n
-                        .it will only be used for verifying your identity and payment\n
-                        .you can change it at any time\n
-                        \n
-                        🔐security:
-                        .all your infromation is stored using encryption\n
-                        .no data will be shared with a third party
+🌟welcome to the testing bot!\n
+📱to start please enter you'r phone number
+.enter the phone number with the 09121764237 format
+.the phone number must belong to you
+.this phone number is used for verifying your identity and direct payment\n
+💡keep note:
+.your phone number will remain safe and secret
+.it will only be used for verifying your identity and payment
+.you can change it at any time\n
+🔐security:
+.all your infromation is stored using encryption
+.no data will be shared with a third party
                             """
             ),
         }
@@ -93,8 +91,8 @@ class TelegramProcessTextOutputs:
             "chat_id": chat_id,
             "text": (
                 """
-                ❌you'r phone number has not been verified\n
-                📱in order to continue please verify your phone number\n
+❌you'r phone number has not been verified
+📱in order to continue please verify your phone number
 
                 """
             ),
@@ -174,14 +172,12 @@ class TelegramProcessTextOutputs:
         return {
             "chat_id": chat_id,
             "text": """
-                ✅the verification code has been sent to your phone number. please enter the code\n
-                \n
-                💳important points about bank acounts:\n
-                .The acount that you use for payment must belong to the owner of the phone number\n
-                .The  system verifies weather the phone number and the acount number belong to the same person\n
-                .In case they don't, you'r payment will not go through\n
-                .If the acount belongs to someone else, please use another acount
-                
+✅the verification code has been sent to your phone number. please enter the code\n
+💳important points about bank acounts:
+.The acount that you use for payment must belong to the owner of the phone number
+.The  system verifies weather the phone number and the acount number belong to the same person
+.In case they don't, you'r payment will not go through
+.If the acount belongs to someone else, please use another acount
             """,
             "reply_markup": {
                 "inline_keyboard": [
@@ -229,26 +225,28 @@ class TelegramProcessCallbackQueryOutput:
                 "chat_id": chat_id,
                 "message_id": message_id,
                 "text": """
-📜Terms of service agreement\n
-🔰Terms of Using the Test Bot:\n
-1️⃣General Rules:\n
-• This service is intended for purchasing Telegram Stars and Telegram Premium\n
-• The user is required to provide accurate and complete information\n
-• Any misuse of the service is prohibited\n
-2️⃣Payment Rules:\n
-• Payments are non-refundable\n
-• By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered\n
-3️⃣Privacy:\n
-• Your personal information will be kept confidential\n
-• The information is used for identity and payment verification\n
-• Information will not be shared with any third party\n
-4️⃣Responsibilities:\n
-• We are committed to delivering products intact and on time\n
-• The user is responsible for the accuracy of the information they provide\n
-• Any form of fraud will result in being banned from the service\n
-5️⃣Support:\n
-• 24/7 support is available to you\n
-• Response time: up to 2 hours\n
+📜Terms of service agreement
+\n
+🔰Terms of Using the Test Bot:
+\n
+1️⃣General Rules:
+• This service is intended for purchasing Telegram Stars and Telegram Premium
+• The user is required to provide accurate and complete information
+• Any misuse of the service is prohibited
+2️⃣Payment Rules:
+• Payments are non-refundable
+• By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered
+3️⃣Privacy:
+• Your personal information will be kept confidential
+• The information is used for identity and payment verification
+• Information will not be shared with any third party
+4️⃣Responsibilities:
+• We are committed to delivering products intact and on time
+• The user is responsible for the accuracy of the information they provide
+• Any form of fraud will result in being banned from the service
+5️⃣Support:
+• 24/7 support is available to you
+• Response time: up to 2 hours
 • Support contact: @TestSupport
 \n
 ⚠️Note: By using this service, you accept all of the above terms
@@ -294,11 +292,13 @@ class TelegramProcessCallbackQueryOutput:
             "chat_id": chat_id,
             "text": """
 ✅the terms and condtionns has been accepted!
+\n
 🎉welcome! now you can use all the features
 💡To begin:
 .the command /buy for purchasing of products.
 .the command /prices for seeing the prices.
 .the command /support for support
+\n
 🔁the command /start for returning to main menu
             """,
         }
