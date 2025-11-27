@@ -5,9 +5,9 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.models import Chat
 from src.bot.process_output import (
-    callback_output as callback_output,
+    telegram_process_callback_query_outputs as callback_output,
 )
-from src.bot.process_output import text_output as text_output
+from src.bot.process_output import telegram_process_text_outputs as text_output
 import re
 
 
