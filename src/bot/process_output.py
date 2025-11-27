@@ -154,11 +154,12 @@ class TelegramProcessTextOutputs:
 
                 in order to receive help, pick one of the options below:
 
-                📞contact with support - contact info of the support team.
-                ❓commonly asked questions - the answer to most of your questions.
-                🔁return to main menu - returns you to the main menu.
+                📞contact with support - contact info.
+                ❓commonly asked questions - common aswers.
+                🔁return to main menu - return butotn.
 
-                💡take note: for faster support, first look at commonly asked questions.
+                💡take note: for faster support
+                first look at commonly asked questions.
                 """
             ),
             "reply_markup": {
