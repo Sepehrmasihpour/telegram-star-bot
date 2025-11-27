@@ -180,7 +180,21 @@ async def calculate_prices(chat_id: Union[str, int]) -> Union[Dict, None]:
     try:
         return {
             "chat_id": chat_id,
-            "text": "hese are the prices\nprice1\nprice2\nprice2\nprice3",
+            "text": """
+🌟The prices of product no1\n
+⭐product no1 v1
+price:100,000 T
+--------------------------------------\n
+🌟The prices of product no1\n
+⭐product no1 v2
+price:200,000 T
+--------------------------------------\n
+🌟The prices of product no1\n
+⭐product no1 v3
+price:300,000 T
+--------------------------------------\n
+
+            """,
         }
     except Exception as e:
         logger.error(f"claculate_price failed:{e}")
@@ -243,7 +257,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     await telegram_send_message(
                         request=request,
                         payload=response_params.get(
-                            "params"
+                            "loading_message"
                         ),  # * this will send a loading message to the user as the price caluclation might take a second
                     )
                     chat_id = response_params.get("params").get("chat_id")
