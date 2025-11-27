@@ -2,6 +2,7 @@ from typing import Union
 
 
 class TelegramProcessTextOutputs:
+    @staticmethod
     def shop_options(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
@@ -26,12 +27,14 @@ class TelegramProcessTextOutputs:
             },
         }
 
+    @staticmethod
     def unsupported_command(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
             "text": "command not supported",
         }
 
+    @staticmethod
     def phone_number_input(chat_id: Union[str, int]):
 
         return {
@@ -54,6 +57,7 @@ class TelegramProcessTextOutputs:
             ),
         }
 
+    @staticmethod
     def phone_number_verfication_needed(chat_id: Union[str, int]):
 
         return {
@@ -83,6 +87,7 @@ class TelegramProcessTextOutputs:
             },
         }
 
+    @staticmethod
     def terms_and_conditions(chat_id: Union[str, int]):
 
         return {
@@ -106,12 +111,14 @@ class TelegramProcessTextOutputs:
             },
         }
 
+    @staticmethod
     def authentication_failed(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
             "text": "authentication failed",
         }
 
+    @staticmethod
     def prices(chat_id: Union[str, int]):
         return {
             "method": "calculatePrices",
@@ -121,6 +128,7 @@ class TelegramProcessTextOutputs:
             },
         }
 
+    @staticmethod
     def support(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
@@ -156,12 +164,15 @@ in order to recive help pick one of the options bellow:\n
             },
         }
 
+    @staticmethod
     def phone_max_attempt(chat_id: Union[str, int]):
         return {"chat_id": chat_id, "text": "failed 3 times. canceled"}
 
+    @staticmethod
     def invalid_phone_number(chat_id: Union[str, int]):
         return {"chat_id": chat_id, "text": "phone number is invalid"}
 
+    @staticmethod
     def phone_numebr_verification(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
@@ -185,9 +196,11 @@ in order to recive help pick one of the options bellow:\n
             },
         }
 
+    @staticmethod
     def invalid_otp(chat_id: Union[str, int]):
         return {"chat_id": chat_id, "text": "❌invalid verification code"}
 
+    @staticmethod
     def phone_number_verified(chat_id: Union[str, int]):
         return {
             "method": "verifiedPhone",
@@ -203,12 +216,14 @@ in order to recive help pick one of the options bellow:\n
 
 class TelegramProcessCallbackQueryOutput:
 
+    @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
         return {
             "method": "answerCallback",
             "params": {"callback_query_id": query_id},
         }
 
+    @staticmethod
     def show_terms_condititons(chat_id: Union[str, int], message_id: Union[str, int]):
         return {
             "method": "editMessageText",
@@ -250,6 +265,7 @@ class TelegramProcessCallbackQueryOutput:
             },
         }
 
+    @staticmethod
     def terms_and_conditions(chat_id: Union[str, int], message_id: Union[str, int]):
         return {
             "method": "editMessageText",
@@ -276,6 +292,7 @@ class TelegramProcessCallbackQueryOutput:
             },
         }
 
+    @staticmethod
     def welcome_message(chat_id: Union[str, id]):
         return {
             "chat_id": chat_id,
