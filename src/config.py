@@ -228,7 +228,38 @@ class TelegramProcessCallbackQueryOutput:
             "params": {
                 "chat_id": chat_id,
                 "message_id": message_id,
-                "text": "these are the rules of this bot read them.",
+                "text": """
+                📜Terms of service agreement\n
+                \n
+                🔰Terms of Using the Test Bot:\n
+                \n
+                1️⃣General Rules:\n
+                • This service is intended for purchasing Telegram Stars and Telegram Premium\n
+                • The user is required to provide accurate and complete information\n
+                • Any misuse of the service is prohibited\n
+                \n
+                2️⃣Payment Rules:\n
+                • Payments are non-refundable\n
+                • By order of the Cyber Police (FATA), some transactions may require up to 72 hours for verification before the product is delivered\n
+                \n
+                3️⃣Privacy:\n
+                • Your personal information will be kept confidential\n
+                • The information is used for identity and payment verification\n
+                • Information will not be shared with any third party\n
+                \n
+                4️⃣Responsibilities:\n
+                • We are committed to delivering products intact and on time\n
+                • The user is responsible for the accuracy of the information they provide\n
+                • Any form of fraud will result in being banned from the service\n
+                \n
+                5️⃣Support:\n
+                • 24/7 support is available to you\n
+                • Response time: up to 2 hours\n
+                • Support contact: @TestSupport
+                \n
+                \n
+                ⚠️Note: By using this service, you accept all of the above terms
+                """,
                 "reply_markup": {
                     "inline_keyboard": [
                         [{"text": "خواندم", "callback_data": "read_the_terms"}],
@@ -244,18 +275,18 @@ class TelegramProcessCallbackQueryOutput:
             "params": {
                 "chat_id": chat_id,
                 "message_id": message_id,
-                "text": "I have read the terms and services and agree accept them",
+                "text": "By using the test bot you are obligated to follow our terms of service if you agree to the terms press the 'agree and accept' button",
                 "reply_markup": {
                     "inline_keyboard": [
                         [
                             {
-                                "text": "خواندم و موافقم",
+                                "text": "✅I agree and accept",
                                 "callback_data": "accepted_terms",
                             }
                         ],
                         [
                             {
-                                "text": "مشاهده قوانین",
+                                "text": "📜See terms of service",
                                 "callback_data": "show_terms_for_acceptance",
                             }
                         ],
