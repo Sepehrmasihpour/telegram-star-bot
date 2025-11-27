@@ -292,7 +292,12 @@ class TelegramProcessCallbackQueryOutput:
                 ),
                 "reply_markup": {
                     "inline_keyboard": [
-                        [{"text": "خواندم", "callback_data": "read_the_terms"}],
+                        [
+                            {
+                                "text": "I read the terms",
+                                "callback_data": "read_the_terms",
+                            }
+                        ],
                     ]
                 },
             },
