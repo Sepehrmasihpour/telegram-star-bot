@@ -1,10 +1,17 @@
-from typing import Union
+from typing import Union, Dict
 from textwrap import dedent
 
 
 def _t(s: str) -> str:
     """Normalize multi-line text: remove common indent and trim outer whitespace."""
     return dedent(s).strip()
+
+
+PRODUCT_EMOJIS = {
+    "product_no1": "⭐",
+    "product_no2": "💎",
+    "product_no3": "🤖",
+}
 
 
 class TelegramProcessTextOutputs:
@@ -135,58 +142,6 @@ class TelegramProcessTextOutputs:
         }
 
     @staticmethod
-    def prices(chat_id: Union[str, int]):
-        return {
-            "method": "calculatePrices",
-            "params": {
-                "chat_id": chat_id,
-                "text": "🔍Getting the most recent up to date prices...",
-            },
-        }
-
-    @staticmethod
-    def support(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                🆘The Test bot support section
-
-                in order to receive help, pick one of the options below:
-
-                📞contact with support - contact info.
-                ❓commonly asked questions - common aswers.
-                🔁return to main menu - return butotn.
-
-                💡take note: for faster support
-                first look at commonly asked questions.
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📞contact with support",
-                            "callback_data": "contact_support",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "❓commonly asked questions",
-                            "callback_data": "common_questions",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🔁return to main menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
-
-    @staticmethod
     def phone_max_attempt(chat_id: Union[str, int]):
         return {"chat_id": chat_id, "text": "failed 3 times. canceled"}
 
@@ -242,6 +197,61 @@ class TelegramProcessTextOutputs:
 
 
 class TelegramProcessCallbackQueryOutput:
+
+    @staticmethod
+    def loading_prices(chat_id: Union[str, int]):
+        return {
+            "method": "calculatePrices",
+            "loading_message": {
+                "chat_id": chat_id,
+                "text": "🔍Getting the most recent up to date prices...",
+            },
+        }
+
+    @staticmethod
+    def show_prices(chat_id: Union[str, int], prices: Dict):
+        """
+        prices = {
+            "product_no1": {"v1": 100000, "v2": 200000, ...},
+            "product_no2": {"v1": 400000, ...},
+            ...
+        }
+        """
+
+        lines = ["📊 **Current Prices:**", ""]  # Header
+
+        for product_name, variations in prices.items():
+            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")  # fallback emoji
+
+            # product title
+            lines.append(f"{emoji} *{product_name}*")
+
+            # variations and prices
+            for variation, value in variations.items():
+                # format number with commas and add " T"
+                price = f"{value:,} T"
+                lines.append(f"    ➜ {variation}: {price}")
+
+            lines.append("")  # blank line between products
+
+        # Build final string
+        final_text = _t("\n".join(lines))
+
+        return {
+            "chat_id": chat_id,
+            "text": final_text,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "return to main menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
+            },
+        }
 
     @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
@@ -339,21 +349,156 @@ class TelegramProcessCallbackQueryOutput:
     @staticmethod
     def welcome_message(chat_id: Union[str, id]):
         return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
+            "method": "show_menu",
+            "params": {
+                "chat_id": chat_id,
+                "text": _t(
+                    """
                 ✅the terms and conditions have been accepted!
 
                 🎉welcome! now you can use all the features.
 
                 💡To begin:
-                .the command /buy for purchasing products
-                .the command /prices for seeing the prices
-                .the command /support for support
+                .the buttons starting with buy are for purchasing
+                .the button show prices for seeing the prices
+                .the button support for support
 
                 🔁the command /start for returning to main menu
                 """
-            ),
+                ),
+            },
+        }
+
+    @staticmethod
+    def return_to_menu(chat_id: Union[str, int], message_id: Union[str, int]):
+        return {
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": _t(
+                    """
+                🌟welcome to the test bot!
+
+                💡to buy product no1, product no2, product no3, press the relevant button.
+                """
+                ),
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
+                        [{"text": "🛒product no2", "callback_data": "buy_product_2"}],
+                        [{"text": "🎯product no3", "callback_data": "buy_product_3"}],
+                        [{"text": "💰show prices", "callback_data": "show_prices"}],
+                        [
+                            {
+                                "text": "📜show terms of service",
+                                "callback_data": "show_terms",
+                            }
+                        ],
+                        [{"text": "🆘support", "callback_data": "support"}],
+                    ]
+                },
+            },
+        }
+
+    @staticmethod
+    def show_terms(chat_id: Union[str, int], message_id: Union[str, int]):
+        return {
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": _t(
+                    """
+                    📜Terms of service agreement
+
+                    🔰Terms of Using the Test Bot:
+
+                    1️⃣ General Rules:
+                    • This service is intended for purchasing Telegram Stars and Telegram Premium.
+                    • The user is required to provide accurate and complete information.
+                    • Any misuse of the service is prohibited.
+
+                    2️⃣ Payment Rules:
+                    • Payments are non-refundable.
+                    • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
+                      for verification before the product is delivered.
+
+                    3️⃣ Privacy:
+                    • Your personal information will be kept confidential.
+                    • The information is used for identity and payment verification.
+                    • Information will not be shared with any third party.
+
+                    4️⃣ Responsibilities:
+                    • We are committed to delivering products intact and on time.
+                    • The user is responsible for the accuracy of the information they provide.
+                    • Any form of fraud will result in being banned from the service.
+
+                    5️⃣ Support:
+                    • Support is available to you.
+                    • Response time: up to 2 hours.
+                    • Support contact: @TestSupport.
+
+                    ⚠️Note: By using this service, you accept all of the above terms.
+                    """
+                ),
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "return to the menu",
+                                "callback_data": "return_to_menu",
+                            }
+                        ],
+                    ]
+                },
+            },
+        }
+
+    @staticmethod
+    def support(chat_id: Union[str, int], message_id: Union[str, int]):
+        return {
+            "method": "editMessageText",
+            "params": {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": _t(
+                    """
+                🆘The Test bot support section
+
+                in order to receive help, pick one of the options below:
+
+                📞contact with support - contact info.
+                ❓commonly asked questions - common aswers.
+                🔁return to main menu - return butotn.
+
+                💡take note: for faster support
+                first look at commonly asked questions.
+                """
+                ),
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "📞contact with support",
+                                "callback_data": "contact_support",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "❓commonly asked questions",
+                                "callback_data": "common_questions",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🔁return to main menu",
+                                "callback_data": "return_to_menu",
+                            }
+                        ],
+                    ]
+                },
+            },
         }
 
 

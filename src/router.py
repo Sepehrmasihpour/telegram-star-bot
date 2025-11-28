@@ -3,7 +3,7 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from urllib.parse import urljoin
 from contextlib import asynccontextmanager
-from typing import Optional, Dict, Union
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI, HTTPException, Depends
@@ -15,6 +15,12 @@ from src.config import settings, logger
 from src.bot.processor import serialize_message, serialize_callback_query
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
+from src.utils.price import calculate_prices
+from src.clients.telegram_client import (
+    telegram_answer_callback_query,
+    telegram_edit_messages_text,
+    telegram_send_message,
+)
 
 from sqlalchemy.orm import Session
 from src.db import get_db
@@ -116,90 +122,6 @@ def verify_secret_token(request: Request) -> bool:
 # helper function for sending messages in telegram
 
 
-async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, None]:
-    send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
-    params = payload
-
-    try:
-        resp = await request.app.state.http.post(send_url, json=params)
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        logger.error(
-            "sendMessage failed: %s | body=%s",
-            e,
-            getattr(e, "response", None) and e.response.text,
-        )
-        # Return 200 to avoid Telegram retry storms; log the error for us
-        return {"ok": False, "error": "sendMessage failed"}
-
-    return {"ok": True}
-
-
-async def telegram_answer_callback_query(
-    request: Request, payload: Dict
-) -> Union[Dict, None]:
-    send_url = f"https://api.telegram.org/bot{settings.bot_token}/answerCallbackQuery"
-    params = payload
-
-    try:
-        resp = await request.app.state.http.post(send_url, json=params)
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        logger.error(
-            "callback query answer failed: %s | body=%s",
-            e,
-            getattr(e, "response", None) and e.response.text,
-        )
-        return {"ok": False, "error": "answerCallbackQuery failed"}
-
-    return {"ok": True}
-
-
-async def telegram_edit_messages_text(
-    request: Request, payload: Dict
-) -> Union[Dict, None]:
-    send_url = f"https://api.telegram.org/bot{settings.bot_token}/editMessageText"
-    params = payload
-
-    try:
-        resp = await request.app.state.http.post(send_url, json=params)
-        resp.raise_for_status()
-    except httpx.HTTPError as e:
-        logger.error(
-            "telgram edit message text failed: %s | body=%s",
-            e,
-            getattr(e, "response", None) and e.response.text,
-        )
-        return {"ok": False, "error": "editMessageText failed"}
-
-    return {"ok": True}
-
-
-async def calculate_prices(chat_id: Union[str, int]) -> Union[Dict, None]:
-    # * here the prices will be calucalated asynrounously for now I just put a placeholder
-    try:
-        return {
-            "chat_id": chat_id,
-            "text": """
-🌟The prices of product no1\n
-⭐product no1 v1
-price:100,000 T
---------------------------------------\n
-🌟The prices of product no1\n
-⭐product no1 v2
-price:200,000 T
---------------------------------------\n
-🌟The prices of product no1\n
-⭐product no1 v3
-price:300,000 T
---------------------------------------\n
-
-            """,
-        }
-    except Exception as e:
-        logger.error(f"claculate_price failed:{e}")
-
-
 # ---------- Webhook endpoint ----------
 @router.post(settings.endpoint)
 async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
@@ -252,22 +174,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     request=request, payload=response_params
                 )
             method = response_params.get("method")
-            if method == "calculatePrices":
-                try:
-                    await telegram_send_message(
-                        request=request,
-                        payload=response_params.get(
-                            "loading_message"
-                        ),  # * this will send a loading message to the user as the price caluclation might take a second
-                    )
-                    chat_id = response_params.get("params").get("chat_id")
-                    prices_payload = await calculate_prices(chat_id)
-                    return await telegram_send_message(
-                        request=request, payload=prices_payload
-                    )
-                except Exception as e:
-                    logger.error("calculatePrices failed:%s", e)
-                    return {"ok": False, "error": "calculating prices failed"}
         if callback_query is not None:
             try:
                 response_params = serialize_callback_query(
@@ -289,6 +195,40 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 return await telegram_edit_messages_text(
                     request=request, payload=response_params.get("params")
                 )
+            if method == "show_menu":
+                await telegram_send_message(
+                    request, payload=response_params.get("params")
+                )
+                chat_id = response_params.get("params").get("chat_id")
+                custom_payload = {"custom": "show_menu", "chat_id": chat_id}
+                try:
+                    response_params = serialize_callback_query(custom_payload, db)
+                except Exception as e:
+                    logger.error("seraializing_callback_query failed: %s", e)
+                    return {"ok": False, "error": "serializing callback failed"}
+                return await telegram_send_message(request, response_params)
+            if method == "calculatePrices":
+                try:
+                    chat_id = response_params.get("loading_message").get("chat_id")
+                    loading_message_payload = response_params.get("loading_message")
+                    await telegram_send_message(
+                        request=request, payload=loading_message_payload
+                    )
+                    prices = await calculate_prices()
+                    custom_message_payload = {
+                        "chat_id": chat_id,
+                        "prices": prices,
+                        "custom": "show_prices",
+                    }
+
+                    response_params = serialize_callback_query(
+                        payload=custom_message_payload, db=db
+                    )
+
+                    return await telegram_send_message(request, response_params)
+                except Exception as e:
+                    logger.error("calculatePrices failed:%s", e)
+                    return {"ok": False, "error": "calculating prices failed"}
         if message is None and callback_query is None:
             logger.info("Unsupported update type: %s", update.keys())
             return {"ok": True, "ignored": True}  # 200 OK, no retry

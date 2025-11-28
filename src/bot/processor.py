@@ -25,15 +25,20 @@ class ChatNotCreated(SystemError):
 
 def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     try:
-        chat_data = payload.get("chat") or {}
-        from_data = payload.get("from") or {}
-        if chat_data.get("type") != "private":
-            raise NotPrivateChat("Only private chats are supported.")
-        if chat_data.get("id") != from_data.get("id"):
-            raise NotPrivateChat("chat.id and from.id must match for private messages.")
-        chat = TgChat(**chat_data)
-        data = Text(**payload)
-        return process_text(chat, data, db)
+        if "custon" not in payload:
+            chat_data = payload.get("chat") or {}
+            from_data = payload.get("from") or {}
+            if chat_data.get("type") != "private":
+                raise NotPrivateChat("Only private chats are supported.")
+            if chat_data.get("id") != from_data.get("id"):
+                raise NotPrivateChat(
+                    "chat.id and from.id must match for private messages."
+                )
+            chat = TgChat(**chat_data)
+            data = Text(**payload)
+            return process_text(chat, data, db)
+        return process_custom_text(payload, db)
+
     except Exception as e:
         logger.error(f"serialize_message failed:{e}")
         raise
@@ -41,13 +46,15 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
 
 def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     try:
-        from_data = payload.get("from") or {}
-        chat_id = from_data.get("id")
-        message = payload.get("message")
-        message_id = message.get("message_id")
-        query_data = payload.get("data")
-        query_id = payload.get("id")
-        return process_callback_query(query_id, chat_id, query_data, message_id, db)
+        if "custom" not in payload:
+            from_data = payload.get("from") or {}
+            chat_id = from_data.get("id")
+            message = payload.get("message")
+            message_id = message.get("message_id")
+            query_data = payload.get("data")
+            query_id = payload.get("id")
+            return process_callback_query(query_id, chat_id, query_data, message_id, db)
+        return process_custom_text(payload, db)
     except Exception as e:
         logger.error(f"serialize_callback_query failed:{e}")
         raise
@@ -57,9 +64,9 @@ def process_callback_query(
     query_id: str, chat_id: str, query_data: str, message_id: str, db: Session
 ):
     try:
-
+        chat = get_chat_by_chat_id(db, chat_id)
+        auth_result = chat_first_level_authentication(db, chat_db=chat)
         if query_data == "show_terms_for_acceptance":
-            chat = get_chat_by_chat_id(db, chat_id)
             if chat.accepted_terms is True:
                 return callback_output.empty_answer_callback(query_id)
             return callback_output.show_terms_condititons(chat_id, message_id)
@@ -68,9 +75,29 @@ def process_callback_query(
             return callback_output.terms_and_conditions(chat_id, message_id)
 
         if query_data == "accepted_terms":
-            update_chat_by_chat_id(db, chat_id, accepted_terms=True)
+            if not chat.accepted_terms:
+                update_chat_by_chat_id(db, chat_id, accepted_terms=True)
             return callback_output.welcome_message(chat_id)
-
+        if query_data == "show_prices":
+            return (
+                callback_output.loading_prices(chat_id)
+                if auth_result is True
+                else auth_result
+            )
+        if query_data == "return_to_menu":
+            return callback_output.return_to_menu(chat_id, message_id)
+        if query_data == "show_terms":
+            return (
+                callback_output.show_terms(chat_id, message_id)
+                if auth_result is True
+                else auth_result
+            )
+        if query_data == "support":
+            return (
+                callback_output.support(chat_id, message_id)
+                if auth_result is True
+                else auth_result
+            )
         else:
             ...
     except Exception as e:
@@ -88,20 +115,6 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
                     text_output.shop_options(chat.id)
                     if auth_result is True
                     else auth_result
-                )
-            if data.text == "/buy":
-                return (
-                    text_output.shop_options(chat.id)
-                    if auth_result is True
-                    else auth_result
-                )
-            if data.text == "/prices":
-                return (
-                    text_output.prices(chat.id) if auth_result is True else auth_result
-                )
-            if data.text == "/support":
-                return (
-                    text_output.support(chat.id) if auth_result is True else auth_result
                 )
             else:
                 raise UnsuportedTextInput("unsupported command or text input")
@@ -134,6 +147,20 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
         raise
 
 
+def process_custom_text(payload: Dict, db: Session):
+    try:
+        custom_command = payload.get("custom")
+        chat_id = payload.get("chat_id")
+        if custom_command == "show_prices":
+            prices = payload.get("prices")
+            text_output.show_price(chat_id=chat_id, prices=prices)
+        if custom_command == "show_menu":
+            text_output.shop_options(chat_id)
+    except Exception as e:
+        logger.error(f"proccess_custom_text failed:{e}")
+        raise
+
+
 def chat_first_level_authentication(
     db: Session, data: TgChat, chat_db: Optional[Chat] = None
 ) -> Dict[str, Any] | bool:
@@ -155,7 +182,7 @@ def chat_first_level_authentication(
 
 
 def chat_second_lvl_authentication(
-    db: Session, data: TgChat, chat_db: Optional[Chat] = None
+    db: Session, data: Optional[TgChat] = None, chat_db: Optional[Chat] = None
 ) -> Dict[str, Any] | bool:
     try:
         chat = chat_db or get_chat_by_chat_id(db, chat_id=data.id)
