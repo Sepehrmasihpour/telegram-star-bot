@@ -469,7 +469,9 @@ class TelegramProcessCallbackQueryOutput:
                 in order to receive help, pick one of the options below:
 
                 📞contact with support - contact info.
+                
                 ❓commonly asked questions - common aswers.
+                
                 🔁return to main menu - return butotn.
 
                 💡take note: for faster support

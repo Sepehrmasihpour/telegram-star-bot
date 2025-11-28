@@ -153,7 +153,7 @@ def process_custom_text(payload: Dict, db: Session):
         chat_id = payload.get("chat_id")
         if custom_command == "show_prices":
             prices = payload.get("prices")
-            text_output.show_price(chat_id=chat_id, prices=prices)
+            callback_output.show_price(chat_id=chat_id, prices=prices)
         if custom_command == "show_menu":
             text_output.shop_options(chat_id)
     except Exception as e:
