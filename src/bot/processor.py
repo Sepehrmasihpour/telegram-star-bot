@@ -162,7 +162,7 @@ def process_custom_text(payload: Dict, db: Session):
 
 
 def chat_first_level_authentication(
-    db: Session, data: TgChat, chat_db: Optional[Chat] = None
+    db: Session, data: Optional[TgChat], chat_db: Optional[Chat] = None
 ) -> Dict[str, Any] | bool:
     try:
 
@@ -182,7 +182,7 @@ def chat_first_level_authentication(
 
 
 def chat_second_lvl_authentication(
-    db: Session, data: TgChat | None = None, chat_db: Chat | None = None
+    db: Session, data: Optional[TgChat] = None, chat_db: Optional[Chat] = None
 ) -> Dict[str, Any] | bool:
     try:
         chat = chat_db or get_chat_by_chat_id(db, chat_id=data.id)
