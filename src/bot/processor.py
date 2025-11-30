@@ -79,22 +79,35 @@ def process_callback_query(
                 update_chat_by_chat_id(db, chat_id, accepted_terms=True)
             return callback_output.welcome_message(chat_id)
         if query_data == "show_prices":
+
             return (
                 callback_output.loading_prices(chat_id)
                 if auth_result is True
                 else auth_result
             )
         if query_data == "return_to_menu":
-            return callback_output.return_to_menu(chat_id, message_id)
+            return (
+                callback_output.return_to_menu(chat_id, message_id)
+                if is_last_message(message_id, chat)
+                else callback_output.return_to_menu(chat_id, message_id, append=True)
+            )
         if query_data == "show_terms":
             return (
-                callback_output.show_terms(chat_id, message_id)
+                (
+                    callback_output.show_terms(chat_id, message_id)
+                    if is_last_message(message_id, chat) is True
+                    else callback_output.show_terms(chat_id, message_id, append=True)
+                )
                 if auth_result is True
                 else auth_result
             )
         if query_data == "support":
             return (
-                callback_output.support(chat_id, message_id)
+                (
+                    callback_output.support(chat_id, message_id)
+                    if is_last_message(message_id, chat) is True
+                    else callback_output.support(chat_id, message_id, append=True)
+                )
                 if auth_result is True
                 else auth_result
             )
@@ -197,6 +210,11 @@ def chat_second_lvl_authentication(
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
         raise
+
+
+def is_last_message(message_id: str, chat: Chat):
+    last_message_id = chat.last_message_id
+    return False if int(message_id) != last_message_id else True
 
 
 def phone_number_authenticator(phone: str) -> bool:

@@ -1,5 +1,6 @@
 from typing import Union, Dict
 from textwrap import dedent
+from typing import Optional
 
 
 def _t(s: str) -> str:
@@ -28,8 +29,8 @@ class TelegramProcessTextOutputs:
             ),
             "reply_markup": {
                 "inline_keyboard": [
-                    [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
-                    [{"text": "🛒product no2", "callback_data": "buy_product_2"}],
+                    [{"text": "🤖buy product no1", "callback_data": "buy_product_1"}],
+                    [{"text": "🛒buy product no2", "callback_data": "buy_product_2"}],
                     [{"text": "🎯product no3", "callback_data": "buy_product_3"}],
                     [{"text": "💰show prices", "callback_data": "show_prices"}],
                     [
@@ -370,10 +371,13 @@ class TelegramProcessCallbackQueryOutput:
         }
 
     @staticmethod
-    def return_to_menu(chat_id: Union[str, int], message_id: Union[str, int]):
-        return {
-            "method": "editMessageText",
-            "params": {
+    def return_to_menu(
+        chat_id: Union[str, int],
+        message_id: Union[str, int],
+        append: Optional[bool] = False,
+    ):
+        params = (
+            {
                 "chat_id": chat_id,
                 "message_id": message_id,
                 "text": _t(
@@ -386,8 +390,18 @@ class TelegramProcessCallbackQueryOutput:
                 "reply_markup": {
                     "inline_keyboard": [
                         [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
-                        [{"text": "🛒product no2", "callback_data": "buy_product_2"}],
-                        [{"text": "🎯product no3", "callback_data": "buy_product_3"}],
+                        [
+                            {
+                                "text": "🛒buy product no2",
+                                "callback_data": "buy_product_2",
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🎯buy product no3",
+                                "callback_data": "buy_product_3",
+                            }
+                        ],
                         [{"text": "💰show prices", "callback_data": "show_prices"}],
                         [
                             {
@@ -399,17 +413,25 @@ class TelegramProcessCallbackQueryOutput:
                     ]
                 },
             },
-        }
+        )
+        if append is False:
+            params["message_id"] = message_id
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
 
     @staticmethod
-    def show_terms(chat_id: Union[str, int], message_id: Union[str, int]):
-        return {
-            "method": "editMessageText",
-            "params": {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": _t(
-                    """
+    def show_terms(
+        chat_id: Union[str, int],
+        message_id: Union[str, int],
+        append: Optional[bool] = False,
+    ):
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
                     📜Terms of service agreement
 
                     🔰Terms of Using the Test Bot:
@@ -441,19 +463,26 @@ class TelegramProcessCallbackQueryOutput:
 
                     ⚠️Note: By using this service, you accept all of the above terms.
                     """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "return to the menu",
-                                "callback_data": "return_to_menu",
-                            }
-                        ],
-                    ]
-                },
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "return to the menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
             },
         }
+        if append is False:
+            params["message_id"] = message_id
+
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
 
     @staticmethod
     def support(chat_id: Union[str, int], message_id: Union[str, int]):
