@@ -168,7 +168,7 @@ def process_custom_text(payload: Dict, db: Session):
             prices = payload.get("prices")
             return bot_output.show_prices(chat_id=chat_id, prices=prices)
         if custom_command == "show_menu":
-            bot_output.return_to_menu(chat_id=chat_id, append=True)
+            return bot_output.return_to_menu(chat_id=chat_id, append=True)
     except Exception as e:
         logger.error(f"proccess_custom_text failed:{e}")
         raise
@@ -221,10 +221,9 @@ def is_last_message(
     try:
         if chat_id is None and chat is None:
             raise ValueError("when chat is None chat_id cannot be None")
+        chat = get_chat_by_chat_id(db, chat_id) if chat is None else chat
         if chat is None:
-            chat = get_chat_by_chat_id(db, chat_id)
-            if chat is None:
-                return False
+            return False
         last_message_id = chat.last_message_id
         if last_message_id is None:
             update_chat_by_chat_id(
