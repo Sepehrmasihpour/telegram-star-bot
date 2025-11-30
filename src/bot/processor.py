@@ -223,6 +223,8 @@ def is_last_message(
             raise ValueError("when chat is None chat_id cannot be None")
         if chat is None:
             chat = get_chat_by_chat_id(db, chat_id)
+            if chat is None:
+                return False
         last_message_id = chat.last_message_id
         if last_message_id is None:
             update_chat_by_chat_id(
