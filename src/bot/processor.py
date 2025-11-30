@@ -218,19 +218,26 @@ def is_last_message(
     chat: Optional[Chat] = None,
     chat_id: Optional[Union[str, int]] = None,
 ):
-    if chat_id is None and chat is None:
-        raise ValueError("when chat is None chat_id cannot be None")
-    if chat is None:
-        chat = get_chat_by_chat_id(db, chat_id)
-    last_message_id = chat.last_message_id
-    if last_message_id is None:
-        return True
-    if int(message_id) > last_message_id:
-        update_chat_by_chat_id(db, chat.chat_id, last_message_id=int(message_id))
-        return True
-    if int(message_id) == last_message_id:
-        return True
-    return False
+    try:
+        if chat_id is None and chat is None:
+            raise ValueError("when chat is None chat_id cannot be None")
+        if chat is None:
+            chat = get_chat_by_chat_id(db, chat_id)
+        last_message_id = chat.last_message_id
+        if last_message_id is None:
+            update_chat_by_chat_id(
+                db=db, chat_id=chat.chat_id, last_message_id=last_message_id
+            )
+            return True
+        if int(message_id) > last_message_id:
+            update_chat_by_chat_id(db, chat.chat_id, last_message_id=int(message_id))
+            return True
+        if int(message_id) == last_message_id:
+            return True
+        return False
+    except Exception as e:
+        logger.error(f"is_last_message function failed:{e}")
+        raise
 
 
 def phone_number_authenticator(phone: str) -> bool:
