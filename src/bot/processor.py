@@ -52,7 +52,6 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
             message_id = message.get("message_id")
             query_data = payload.get("data")
             query_id = payload.get("id")
-            is_last_message(message_id=message_id, db=db, chat_id=chat_id)
             return process_callback_query(query_id, chat_id, query_data, message_id, db)
         return process_custom_text(payload, db)
     except Exception as e:
