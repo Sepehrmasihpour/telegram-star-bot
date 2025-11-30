@@ -379,7 +379,6 @@ class TelegramProcessCallbackQueryOutput:
         params = (
             {
                 "chat_id": chat_id,
-                "message_id": message_id,
                 "text": _t(
                     """
                 🌟welcome to the test bot!
