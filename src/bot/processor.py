@@ -168,7 +168,7 @@ def process_custom_text(payload: Dict, db: Session):
             prices = payload.get("prices")
             return bot_output.show_prices(chat_id=chat_id, prices=prices)
         if custom_command == "show_menu":
-            bot_output.shop_options(chat_id)
+            bot_output.return_to_menu(chat_id=chat_id, append=True)
     except Exception as e:
         logger.error(f"proccess_custom_text failed:{e}")
         raise
