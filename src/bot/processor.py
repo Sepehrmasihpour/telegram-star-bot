@@ -125,7 +125,7 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
             auth_result = chat_first_level_authentication(db, chat, chat_data)
             if data.text == "/start":
                 return (
-                    bot_output.return_to_menu(chat.id)
+                    bot_output.return_to_menu(chat.id, append=True)
                     if auth_result is True
                     else auth_result
                 )

@@ -448,17 +448,18 @@ class TelegrambotOutputs:
     @staticmethod
     def support(
         chat_id: Union[str, int],
-        message_id: Optional[Union[str, int]],
+        message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
     ):
+        if message_id is None and append is False:
+            raise ValueError(
+                "telegram output support failed: message_id cannot be None when append is False"
+            )
 
-        return {
-            "method": "editMessageText",
-            "params": {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": _t(
-                    """
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
                 🆘The Test bot support section
 
                 in order to receive help, pick one of the options below:
@@ -472,31 +473,39 @@ class TelegrambotOutputs:
                 💡take note: for faster support
                 first look at commonly asked questions.
                 """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "📞contact with support",
-                                "callback_data": "contact_support",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "❓commonly asked questions",
-                                "callback_data": "common_questions",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "🔁return to main menu",
-                                "callback_data": "return_to_menu",
-                            }
-                        ],
-                    ]
-                },
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "📞contact with support",
+                            "callback_data": "contact_support",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "❓commonly asked questions",
+                            "callback_data": "common_questions",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🔁return to main menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
             },
         }
+
+        if append is False:
+            params["message_id"] = message_id
+
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
 
 
 telegram_process_bot_outputs = TelegrambotOutputs
