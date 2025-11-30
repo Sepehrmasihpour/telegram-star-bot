@@ -15,34 +15,7 @@ PRODUCT_EMOJIS = {
 }
 
 
-class TelegramProcessTextOutputs:
-    @staticmethod
-    def shop_options(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                🌟welcome to the test bot!
-
-                💡to buy product no1, product no2, product no3, press the relevant button.
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [{"text": "🤖buy product no1", "callback_data": "buy_product_1"}],
-                    [{"text": "🛒buy product no2", "callback_data": "buy_product_2"}],
-                    [{"text": "🎯product no3", "callback_data": "buy_product_3"}],
-                    [{"text": "💰show prices", "callback_data": "show_prices"}],
-                    [
-                        {
-                            "text": "📜show terms of service",
-                            "callback_data": "show_terms",
-                        }
-                    ],
-                    [{"text": "🆘support", "callback_data": "support"}],
-                ]
-            },
-        }
+class TelegrambotOutputs:
 
     @staticmethod
     def unsupported_command(chat_id: Union[str, int]):
@@ -100,35 +73,6 @@ class TelegramProcessTextOutputs:
                         {
                             "text": "📝Edit phone number",
                             "callback_data": "edit_phone_number",
-                        }
-                    ],
-                ]
-            },
-        }
-
-    @staticmethod
-    def terms_and_conditions(chat_id: Union[str, int]):
-
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                By using the test bot you are obligated to follow our terms of service.
-                If you agree to the terms, press the 'agree and accept' button.
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "✅I agree and accept",
-                            "callback_data": "accepted_terms",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "📜See terms of service",
-                            "callback_data": "show_terms_for_acceptance",
                         }
                     ],
                 ]
@@ -196,9 +140,6 @@ class TelegramProcessTextOutputs:
             },
         }
 
-
-class TelegramProcessCallbackQueryOutput:
-
     @staticmethod
     def loading_prices(chat_id: Union[str, int]):
         return {
@@ -262,14 +203,17 @@ class TelegramProcessCallbackQueryOutput:
         }
 
     @staticmethod
-    def show_terms_condititons(chat_id: Union[str, int], message_id: Union[str, int]):
-        return {
-            "method": "editMessageText",
-            "params": {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": _t(
-                    """
+    def show_terms_condititons(
+        chat_id: Union[str, int],
+        message_id: Optional[Union[str, int]] = None,
+        append: Optional[bool] = False,
+    ):
+        if append is False and message_id is None:
+            raise ValueError("when append is false message_id cannot be None")
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
                     📜Terms of service agreement
 
                     🔰Terms of Using the Test Bot:
@@ -301,51 +245,68 @@ class TelegramProcessCallbackQueryOutput:
 
                     ⚠️Note: By using this service, you accept all of the above terms.
                     """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "I read the terms",
-                                "callback_data": "read_the_terms",
-                            }
-                        ],
-                    ]
-                },
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "I read the terms",
+                            "callback_data": "read_the_terms",
+                        }
+                    ],
+                ]
             },
         }
+        if append is False:
+            params["message_id"] = message_id
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
 
     @staticmethod
-    def terms_and_conditions(chat_id: Union[str, int], message_id: Union[str, int]):
-        return {
-            "method": "editMessageText",
-            "params": {
-                "chat_id": chat_id,
-                "message_id": message_id,
-                "text": _t(
-                    """
+    def terms_and_conditions(
+        chat_id: Union[str, int],
+        message_id: Optional[Union[str, int]] = None,
+        append: Optional[bool] = False,
+    ):
+        if message_id is None and append is False:
+            raise ValueError("when append is false message_id cannot be None")
+        params = {
+            "chat_id": chat_id,
+            "message_id": message_id,
+            "text": _t(
+                """
                     By using the test bot you are obligated to follow our terms of service.
                     If you agree to the terms, press the 'agree and accept' button.
                     """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "✅I agree and accept",
-                                "callback_data": "accepted_terms",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "📜See terms of service",
-                                "callback_data": "show_terms_for_acceptance",
-                            }
-                        ],
-                    ]
-                },
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "✅I agree and accept",
+                            "callback_data": "accepted_terms",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "📜See terms of service",
+                            "callback_data": "show_terms_for_acceptance",
+                        }
+                    ],
+                ]
             },
         }
+        if append is False:
+            params["message_id"] = message_id
+
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
 
     @staticmethod
     def welcome_message(chat_id: Union[str, id]):
@@ -373,46 +334,47 @@ class TelegramProcessCallbackQueryOutput:
     @staticmethod
     def return_to_menu(
         chat_id: Union[str, int],
-        message_id: Union[str, int],
+        message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
     ):
-        params = (
-            {
-                "chat_id": chat_id,
-                "text": _t(
-                    """
+        if message_id is None and append is False:
+            raise ValueError("message_id can't be none when append is false")
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
                 🌟welcome to the test bot!
 
                 💡to buy product no1, product no2, product no3, press the relevant button.
                 """
-                ),
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
-                        [
-                            {
-                                "text": "🛒buy product no2",
-                                "callback_data": "buy_product_2",
-                            }
-                        ],
-                        [
-                            {
-                                "text": "🎯buy product no3",
-                                "callback_data": "buy_product_3",
-                            }
-                        ],
-                        [{"text": "💰show prices", "callback_data": "show_prices"}],
-                        [
-                            {
-                                "text": "📜show terms of service",
-                                "callback_data": "show_terms",
-                            }
-                        ],
-                        [{"text": "🆘support", "callback_data": "support"}],
-                    ]
-                },
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
+                    [
+                        {
+                            "text": "🛒buy product no2",
+                            "callback_data": "buy_product_2",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🎯buy product no3",
+                            "callback_data": "buy_product_3",
+                        }
+                    ],
+                    [{"text": "💰show prices", "callback_data": "show_prices"}],
+                    [
+                        {
+                            "text": "📜show terms of service",
+                            "callback_data": "show_terms",
+                        }
+                    ],
+                    [{"text": "🆘support", "callback_data": "support"}],
+                ]
             },
-        )
+        }
+
         if append is False:
             params["message_id"] = message_id
         return (
@@ -484,7 +446,12 @@ class TelegramProcessCallbackQueryOutput:
         )
 
     @staticmethod
-    def support(chat_id: Union[str, int], message_id: Union[str, int]):
+    def support(
+        chat_id: Union[str, int],
+        message_id: Optional[Union[str, int]],
+        append: Optional[bool] = False,
+    ):
+
         return {
             "method": "editMessageText",
             "params": {
@@ -532,5 +499,4 @@ class TelegramProcessCallbackQueryOutput:
         }
 
 
-telegram_process_text_outputs = TelegramProcessTextOutputs()
-telegram_process_callback_query_outputs = TelegramProcessCallbackQueryOutput()
+telegram_process_bot_outputs = TelegrambotOutputs
