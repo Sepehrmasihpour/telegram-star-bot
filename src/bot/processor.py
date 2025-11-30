@@ -52,6 +52,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
             message_id = message.get("message_id")
             query_data = payload.get("data")
             query_id = payload.get("id")
+            is_last_message(message_id=message_id, chat_id=chat_id, db=db)
             return process_callback_query(query_id, chat_id, query_data, message_id, db)
         return process_custom_text(payload, db)
     except Exception as e:
@@ -68,10 +69,10 @@ def process_callback_query(
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
-            return bot_output.show_terms_condititons(chat_id, message_id, append=True)
+            return bot_output.show_terms_condititons(chat_id, message_id)
 
         if query_data == "read_the_terms":
-            return bot_output.terms_and_conditions(chat_id, message_id, append=True)
+            return bot_output.terms_and_conditions(chat_id, message_id)
 
         if query_data == "accepted_terms":
             if not chat.accepted_terms:
@@ -227,7 +228,7 @@ def is_last_message(
         last_message_id = chat.last_message_id
         if last_message_id is None:
             update_chat_by_chat_id(
-                db=db, chat_id=chat.chat_id, last_message_id=message_id
+                db=db, chat_id=chat.chat_id, last_message_id=int(message_id)
             )
             return True
         if int(message_id) > last_message_id:
