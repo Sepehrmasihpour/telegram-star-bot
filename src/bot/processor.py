@@ -226,7 +226,7 @@ def is_last_message(
         last_message_id = chat.last_message_id
         if last_message_id is None:
             update_chat_by_chat_id(
-                db=db, chat_id=chat.chat_id, last_message_id=last_message_id
+                db=db, chat_id=chat.chat_id, last_message_id=message_id
             )
             return True
         if int(message_id) > last_message_id:
