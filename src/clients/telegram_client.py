@@ -13,9 +13,10 @@ async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, 
         resp.raise_for_status()
     except httpx.HTTPError as e:
         logger.error(
-            "sendMessage failed: %s | body=%s",
+            "sendMessage failed:%s | body=%s | payload:%s",
             e,
             getattr(e, "response", None) and e.response.text,
+            payload,
         )
         # Return 200 to avoid Telegram retry storms; log the error for us
         return {"ok": False, "error": "sendMessage failed"}
