@@ -193,16 +193,6 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 return await edit_messages_text(
                     request=request, payload=response_params.get("params")
                 )
-            if method == "show_menu":
-                await send_message(request, payload=response_params.get("params"))
-                chat_id = response_params.get("params").get("chat_id")
-                custom_payload = {"custom": "show_menu", "chat_id": chat_id}
-                try:
-                    response_params = serialize_callback_query(custom_payload, db)
-                except Exception as e:
-                    logger.error("seraializing_callback_query failed: %s", e)
-                    return {"ok": False, "error": "serializing callback failed"}
-                return await send_message(request, response_params)
             if method == "calculatePrices":
                 try:
                     loading_message_payload = response_params.get("loading_message")

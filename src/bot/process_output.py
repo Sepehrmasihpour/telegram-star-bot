@@ -342,30 +342,6 @@ class TelegrambotOutputs:
         )
 
     @staticmethod
-    def welcome_message(chat_id: Union[str, int]):
-        return {
-            "method": "show_menu",
-            "params": {
-                "chat_id": chat_id,
-                "text": _t(
-                    """
-                    ✅ **The terms and conditions have been accepted!**
-
-                    🎉Welcome! Now you can use all the features.
-
-                    💡 **To begin:**
-                    .the buttons starting with *buy* are for purchasing
-                    .the button *show prices* for seeing the prices
-                    .the button *support* for support
-
-                    🔁The command */start* returns to the main menu.
-                    """
-                ),
-                "parse_mode": "Markdown",
-            },
-        }
-
-    @staticmethod
     def return_to_menu(
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,

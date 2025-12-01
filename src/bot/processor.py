@@ -76,7 +76,7 @@ def process_callback_query(
         if query_data == "accepted_terms":
             if not chat.accepted_terms:
                 update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-                return bot_output.welcome_message(chat_id)
+                return bot_output.return_to_menu(chat_id=chat_id, append=True)
             return bot_output.empty_answer_callback(query_id)
         if query_data == "show_prices":
 
@@ -164,8 +164,6 @@ def process_custom_text(payload: Dict, db: Session):
         if custom_command == "show_prices":
             prices = payload.get("prices")
             return bot_output.show_prices(chat_id=chat_id, prices=prices)
-        if custom_command == "show_menu":
-            return bot_output.return_to_menu(chat_id=chat_id, append=True)
     except Exception as e:
         logger.error(f"proccess_custom_text failed:{e}")
         raise
