@@ -48,7 +48,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
         if "custom" not in payload:
             from_data = payload.get("from") or {}
             chat_id = from_data.get("id")
-            message = payload.getms("message")
+            message = payload.get("message")
             message_id = message.get("message_id")
             query_data = payload.get("data")
             query_id = payload.get("id")
