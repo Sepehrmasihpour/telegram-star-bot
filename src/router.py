@@ -210,7 +210,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     custom_message_payload = response_params.get(
                         "custom_message_payload"
                     )
-                    custom_message_payload = custom_message_payload["prices"] = prices
+                    custom_message_payload["prices"] = prices
                     delete_message_payload = response_params.get(
                         "delete_message_payload"
                     )
