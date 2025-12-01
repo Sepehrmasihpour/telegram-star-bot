@@ -193,7 +193,7 @@ class TelegrambotOutputs:
                 price = f"{value:,} T"
                 lines.append(f"    ➜ {variation}: {price}")
 
-            lines.append("")  # blank line between products
+            lines.append("\n━━━━━━━━━━━━━━━━━━━━\n")  # blank line between products
 
         # Build final string
         final_text = _t("\n".join(lines))
@@ -354,8 +354,12 @@ class TelegrambotOutputs:
             "text": _t(
                 """
                 🌟 **Welcome to the test bot!**
+                
+                ━━━━━━━━━━━━━━━━━━━━
 
                 💡To buy product no1, product no2, product no3, press the relevant button.
+
+                ━━━━━━━━━━━━━━━━━━━━
                 """
             ),
             "parse_mode": "Markdown",
@@ -410,12 +414,16 @@ class TelegrambotOutputs:
             "text": _t(
                 """
                 🆘 **Test bot support section**
+                
+                ━━━━━━━━━━━━━━━━━━━━
 
                 In order to receive help, pick one of the options below:
 
                 📞 *Contact with support* – contact info.
                 ❓ *Commonly asked questions* – common answers.
                 🔁 *Return to main menu* – returns to the main menu.
+                
+                ━━━━━━━━━━━━━━━━━━━━
 
                 💡 **Note:** For faster support, first look at commonly asked questions.
                 """
