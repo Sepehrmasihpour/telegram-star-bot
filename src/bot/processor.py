@@ -80,7 +80,7 @@ def process_callback_query(
             return bot_output.empty_answer_callback(query_id)
         if query_data == "show_prices":
 
-            return bot_output.loading_prices(chat_id)
+            return bot_output.loading_prices(chat_id, message_id)
 
         if query_data == "return_to_menu":
             return (
