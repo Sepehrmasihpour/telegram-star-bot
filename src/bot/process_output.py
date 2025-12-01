@@ -226,9 +226,29 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
+        form: Optional[bool] = False,
     ):
         if append is False and message_id is None:
             raise ValueError("when append is false message_id cannot be None")
+        inline_keyboard = (
+            [
+                [
+                    {
+                        "text": "I read the terms",
+                        "callback_data": "read_the_terms",
+                    }
+                ],
+            ]
+            if form is True
+            else [
+                [
+                    {
+                        "text": "return to the menu",
+                        "callback_data": "return_to_menu",
+                    }
+                ],
+            ]
+        )
         params = {
             "chat_id": chat_id,
             "text": _t(
@@ -266,16 +286,7 @@ class TelegrambotOutputs:
                 """
             ),
             "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "I read the terms",
-                            "callback_data": "read_the_terms",
-                        }
-                    ],
-                ]
-            },
+            "reply_markup": {"inline_keyboard": inline_keyboard},
         }
         if append is False:
             params["message_id"] = message_id
