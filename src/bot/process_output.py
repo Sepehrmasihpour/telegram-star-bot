@@ -26,46 +26,46 @@ class TelegrambotOutputs:
 
     @staticmethod
     def phone_number_input(chat_id: Union[str, int]):
-
         return {
             "chat_id": chat_id,
             "text": _t(
                 """
-                🌟welcome to the testing bot!
+                🌟 **Welcome to the testing bot!**
 
-                📱to start, please enter your phone number:
+                📱 **To start, please enter your phone number:**
                 .enter the phone number in the 09123456789 format
                 .the phone number must belong to you
                 .this phone number is used for verifying your identity and direct payment
 
-                💡keep note:
+                💡 **Keep note:**
                 .your phone number will remain safe and secret
                 .it will only be used for verifying your identity and payment
                 .you can change it at any time
 
-                🔐security:
+                🔐 **Security:**
                 .all your information is stored using encryption
                 .no data will be shared with a third party
                 """
             ),
+            "parse_mode": "Markdown",
         }
 
     @staticmethod
     def phone_number_verfication_needed(chat_id: Union[str, int]):
-
         return {
             "chat_id": chat_id,
             "text": _t(
                 """
-                ❌your phone number has not been verified
-                📱in order to continue please verify your phone number
+                ❌ **Your phone number has not been verified**
+                📱 In order to continue please verify your phone number.
                 """
             ),
+            "parse_mode": "Markdown",
             "reply_markup": {
                 "inline_keyboard": [
                     [
                         {
-                            "text": "📱send verificaton code",
+                            "text": "📱send verification code",
                             "callback_data": "send_validation_code",
                         }
                     ],
@@ -83,16 +83,25 @@ class TelegrambotOutputs:
     def authentication_failed(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
-            "text": "authentication failed",
+            "text": "*authentication failed*",
+            "parse_mode": "Markdown",
         }
 
     @staticmethod
     def phone_max_attempt(chat_id: Union[str, int]):
-        return {"chat_id": chat_id, "text": "failed 3 times. canceled"}
+        return {
+            "chat_id": chat_id,
+            "text": "❌ *failed 3 times. canceled*",
+            "parse_mode": "Markdown",
+        }
 
     @staticmethod
     def invalid_phone_number(chat_id: Union[str, int]):
-        return {"chat_id": chat_id, "text": "phone number is invalid"}
+        return {
+            "chat_id": chat_id,
+            "text": "❌ *phone number is invalid*",
+            "parse_mode": "Markdown",
+        }
 
     @staticmethod
     def phone_numebr_verification(chat_id: Union[str, int]):
@@ -100,15 +109,17 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": _t(
                 """
-                ✅the verification code has been sent to your phone number. please enter the code
+                ✅ **The verification code has been sent to your phone number.**
+                Please enter the code.
 
-                💳important points about bank accounts:
+                💳 **Important points about bank accounts:**
                 .the account that you use for payment must belong to the owner of the phone number
                 .the system verifies whether the phone number and the account number belong to the same person
                 .in case they don't, your payment will not go through
                 .if the account belongs to someone else, please use another account
                 """
             ),
+            "parse_mode": "Markdown",
             "reply_markup": {
                 "inline_keyboard": [
                     [
@@ -123,7 +134,11 @@ class TelegrambotOutputs:
 
     @staticmethod
     def invalid_otp(chat_id: Union[str, int]):
-        return {"chat_id": chat_id, "text": "❌invalid verification code"}
+        return {
+            "chat_id": chat_id,
+            "text": "❌ *invalid verification code*",
+            "parse_mode": "Markdown",
+        }
 
     @staticmethod
     def phone_number_verified(chat_id: Union[str, int]):
@@ -133,10 +148,11 @@ class TelegrambotOutputs:
                 "chat_id": chat_id,
                 "text": _t(
                     """
-                    ✅phone number successfully verified!
+                    ✅ **Phone number successfully verified!**
                     🌟Showing the products...
                     """
                 ),
+                "parse_mode": "Markdown",
             },
         }
 
@@ -146,7 +162,8 @@ class TelegrambotOutputs:
             "method": "calculatePrices",
             "loading_message": {
                 "chat_id": chat_id,
-                "text": "🔍Getting the most recent up to date prices...",
+                "text": "🔍 *Getting the most recent up to date prices...*",
+                "parse_mode": "Markdown",
             },
         }
 
@@ -207,66 +224,56 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
-        form: Optional[bool] = False,
     ):
         if append is False and message_id is None:
             raise ValueError("when append is false message_id cannot be None")
-        inline_keyboard = (
-            [
-                [
-                    {
-                        "text": "I read the terms",
-                        "callback_data": "read_the_terms",
-                    }
-                ],
-            ]
-            if form is True
-            else [
-                [
-                    {
-                        "text": "return to the menu",
-                        "callback_data": "return_to_menu",
-                    }
-                ],
-            ]
-        )
         params = {
             "chat_id": chat_id,
             "text": _t(
                 """
-                    📜Terms of service agreement
+                📜 **Terms of service agreement**
 
-                    🔰Terms of Using the Test Bot:
+                🔰 **Terms of Using the Test Bot:**
 
-                    1️⃣ General Rules:
-                    • This service is intended for purchasing Telegram Stars and Telegram Premium.
-                    • The user is required to provide accurate and complete information.
-                    • Any misuse of the service is prohibited.
+                1️⃣ **General Rules:**
+                • This service is intended for purchasing Telegram Stars and Telegram Premium.
+                • The user is required to provide accurate and complete information.
+                • Any misuse of the service is prohibited.
 
-                    2️⃣ Payment Rules:
-                    • Payments are non-refundable.
-                    • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
-                      for verification before the product is delivered.
+                2️⃣ **Payment Rules:**
+                • Payments are non-refundable.
+                • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
+                  for verification before the product is delivered.
 
-                    3️⃣ Privacy:
-                    • Your personal information will be kept confidential.
-                    • The information is used for identity and payment verification.
-                    • Information will not be shared with any third party.
+                3️⃣ **Privacy:**
+                • Your personal information will be kept confidential.
+                • The information is used for identity and payment verification.
+                • Information will not be shared with any third party.
 
-                    4️⃣ Responsibilities:
-                    • We are committed to delivering products intact and on time.
-                    • The user is responsible for the accuracy of the information they provide.
-                    • Any form of fraud will result in being banned from the service.
+                4️⃣ **Responsibilities:**
+                • We are committed to delivering products intact and on time.
+                • The user is responsible for the accuracy of the information they provide.
+                • Any form of fraud will result in being banned from the service.
 
-                    5️⃣ Support:
-                    • Support is available to you.
-                    • Response time: up to 2 hours.
-                    • Support contact: @TestSupport.
+                5️⃣ **Support:**
+                • Support is available to you.
+                • Response time: up to 2 hours.
+                • Support contact: @TestSupport.
 
-                    ⚠️Note: By using this service, you accept all of the above terms.
-                    """
+                ⚠️ **Note:** By using this service, you accept all of the above terms.
+                """
             ),
-            "reply_markup": {"inline_keyboard": inline_keyboard},
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "I read the terms",
+                            "callback_data": "read_the_terms",
+                        }
+                    ],
+                ]
+            },
         }
         if append is False:
             params["message_id"] = message_id
@@ -286,13 +293,15 @@ class TelegrambotOutputs:
             raise ValueError("when append is false message_id cannot be None")
         params = {
             "chat_id": chat_id,
-            "message_id": message_id,
             "text": _t(
                 """
-                    By using the test bot you are obligated to follow our terms of service.
-                    If you agree to the terms, press the 'agree and accept' button.
-                    """
+                **Terms and Conditions**
+
+                By using the test bot you are obligated to follow our terms of service.
+                If you agree to the terms, press the *'agree and accept'* button.
+                """
             ),
+            "parse_mode": "Markdown",
             "reply_markup": {
                 "inline_keyboard": [
                     [
@@ -320,25 +329,26 @@ class TelegrambotOutputs:
         )
 
     @staticmethod
-    def welcome_message(chat_id: Union[str, id]):
+    def welcome_message(chat_id: Union[str, int]):
         return {
             "method": "show_menu",
             "params": {
                 "chat_id": chat_id,
                 "text": _t(
                     """
-                ✅the terms and conditions have been accepted!
+                    ✅ **The terms and conditions have been accepted!**
 
-                🎉welcome! now you can use all the features.
+                    🎉Welcome! Now you can use all the features.
 
-                💡To begin:
-                .the buttons starting with buy are for purchasing
-                .the button show prices for seeing the prices
-                .the button support for support
+                    💡 **To begin:**
+                    .the buttons starting with *buy* are for purchasing
+                    .the button *show prices* for seeing the prices
+                    .the button *support* for support
 
-                🔁the command /start for returning to main menu
-                """
+                    🔁The command */start* returns to the main menu.
+                    """
                 ),
+                "parse_mode": "Markdown",
             },
         }
 
@@ -354,11 +364,12 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": _t(
                 """
-                🌟welcome to the test bot!
+                🌟 **Welcome to the test bot!**
 
-                💡to buy product no1, product no2, product no3, press the relevant button.
+                💡To buy product no1, product no2, product no3, press the relevant button.
                 """
             ),
+            "parse_mode": "Markdown",
             "reply_markup": {
                 "inline_keyboard": [
                     [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
@@ -409,20 +420,18 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": _t(
                 """
-                🆘The Test bot support section*
+                🆘 **Test bot support section**
 
-                in order to receive help, pick one of the options below:
+                In order to receive help, pick one of the options below:
 
-                📞contact with support - contact info.
-                
-                ❓commonly asked questions - common aswers.
-                
-                🔁return to main menu - return butotn.
+                📞 *Contact with support* – contact info.
+                ❓ *Commonly asked questions* – common answers.
+                🔁 *Return to main menu* – returns to the main menu.
 
-                💡take note: for faster support
-                first look at commonly asked questions.
+                💡 **Note:** For faster support, first look at commonly asked questions.
                 """
             ),
+            "parse_mode": "Markdown",
             "reply_markup": {
                 "inline_keyboard": [
                     [
@@ -516,4 +525,4 @@ class TelegrambotOutputs:
         )
 
 
-telegram_process_bot_outputs = TelegrambotOutputs
+telegram_process_bot_outputs = TelegrambotOutputs()
