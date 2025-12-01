@@ -48,7 +48,7 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
         if "custom" not in payload:
             from_data = payload.get("from") or {}
             chat_id = from_data.get("id")
-            message = payload.get("message")
+            message = payload.getms("message")
             message_id = message.get("message_id")
             query_data = payload.get("data")
             query_id = payload.get("id")
@@ -69,7 +69,7 @@ def process_callback_query(
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
-            return bot_output.show_terms_condititons(chat_id, message_id)
+            return bot_output.show_terms_condititons(chat_id, message_id, form=True)
 
         if query_data == "read_the_terms":
             return bot_output.terms_and_conditions(chat_id, message_id)
@@ -97,9 +97,11 @@ def process_callback_query(
         if query_data == "show_terms":
             return (
                 (
-                    bot_output.show_terms(chat_id, message_id)
+                    bot_output.show_terms_condititons(chat_id, message_id)
                     if is_last_message(message_id=message_id, chat=chat, db=db) is True
-                    else bot_output.show_terms(chat_id, message_id, append=True)
+                    else bot_output.show_terms_condititons(
+                        chat_id, message_id, append=True
+                    )
                 )
                 if auth_result is True
                 else auth_result

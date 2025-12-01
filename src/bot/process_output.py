@@ -207,9 +207,29 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
+        form: Optional[bool] = False,
     ):
         if append is False and message_id is None:
             raise ValueError("when append is false message_id cannot be None")
+        inline_keyboard = (
+            [
+                [
+                    {
+                        "text": "I read the terms",
+                        "callback_data": "read_the_terms",
+                    }
+                ],
+            ]
+            if form is True
+            else [
+                [
+                    {
+                        "text": "return to the menu",
+                        "callback_data": "return_to_menu",
+                    }
+                ],
+            ]
+        )
         params = {
             "chat_id": chat_id,
             "text": _t(
@@ -246,16 +266,7 @@ class TelegrambotOutputs:
                     ⚠️Note: By using this service, you accept all of the above terms.
                     """
             ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "I read the terms",
-                            "callback_data": "read_the_terms",
-                        }
-                    ],
-                ]
-            },
+            "reply_markup": {"inline_keyboard": inline_keyboard},
         }
         if append is False:
             params["message_id"] = message_id
@@ -384,68 +395,6 @@ class TelegrambotOutputs:
         )
 
     @staticmethod
-    def show_terms(
-        chat_id: Union[str, int],
-        message_id: Union[str, int],
-        append: Optional[bool] = False,
-    ):
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                    📜Terms of service agreement
-
-                    🔰Terms of Using the Test Bot:
-
-                    1️⃣ General Rules:
-                    • This service is intended for purchasing Telegram Stars and Telegram Premium.
-                    • The user is required to provide accurate and complete information.
-                    • Any misuse of the service is prohibited.
-
-                    2️⃣ Payment Rules:
-                    • Payments are non-refundable.
-                    • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
-                      for verification before the product is delivered.
-
-                    3️⃣ Privacy:
-                    • Your personal information will be kept confidential.
-                    • The information is used for identity and payment verification.
-                    • Information will not be shared with any third party.
-
-                    4️⃣ Responsibilities:
-                    • We are committed to delivering products intact and on time.
-                    • The user is responsible for the accuracy of the information they provide.
-                    • Any form of fraud will result in being banned from the service.
-
-                    5️⃣ Support:
-                    • Support is available to you.
-                    • Response time: up to 2 hours.
-                    • Support contact: @TestSupport.
-
-                    ⚠️Note: By using this service, you accept all of the above terms.
-                    """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "return to the menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
-        if append is False:
-            params["message_id"] = message_id
-
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
-        )
-
-    @staticmethod
     def support(
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
@@ -460,7 +409,7 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": _t(
                 """
-                🆘The Test bot support section
+                🆘The Test bot support section*
 
                 in order to receive help, pick one of the options below:
 
