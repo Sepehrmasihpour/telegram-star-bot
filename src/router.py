@@ -17,9 +17,11 @@ from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_
 from src.bot.webhook import set_webhook, delete_webhook
 from src.utils.price import calculate_prices
 from src.clients.telegram_client import (
-    telegram_answer_callback_query,
-    telegram_edit_messages_text,
-    telegram_send_message,
+    answer_callback_query,
+    edit_messages_text,
+    send_message,
+    delete_message,
+    # send_message,
 )
 
 from sqlalchemy.orm import Session
@@ -170,9 +172,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 return {"ok": False, "error": "serializing message failed"}
 
             if "method" not in response_params:
-                return await telegram_send_message(
-                    request=request, payload=response_params
-                )
+                return await send_message(request=request, payload=response_params)
             method = response_params.get("method")
         if callback_query is not None:
             try:
@@ -183,22 +183,18 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 logger.error("seraializing_callback_query failed: %s", e)
                 return {"ok": False, "error": "serializing callback failed"}
             if "method" not in response_params:
-                return await telegram_send_message(
-                    request=request, payload=response_params
-                )
+                return await send_message(request=request, payload=response_params)
             method = response_params.get("method")
             if method == "answerCallback":
-                return await telegram_answer_callback_query(
+                return await answer_callback_query(
                     request=request, payload=response_params.get("params")
                 )
             if method == "editMessageText":
-                return await telegram_edit_messages_text(
+                return await edit_messages_text(
                     request=request, payload=response_params.get("params")
                 )
             if method == "show_menu":
-                await telegram_send_message(
-                    request, payload=response_params.get("params")
-                )
+                await send_message(request, payload=response_params.get("params"))
                 chat_id = response_params.get("params").get("chat_id")
                 custom_payload = {"custom": "show_menu", "chat_id": chat_id}
                 try:
@@ -206,26 +202,24 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                 except Exception as e:
                     logger.error("seraializing_callback_query failed: %s", e)
                     return {"ok": False, "error": "serializing callback failed"}
-                return await telegram_send_message(request, response_params)
+                return await send_message(request, response_params)
             if method == "calculatePrices":
                 try:
-                    chat_id = response_params.get("loading_message").get("chat_id")
                     loading_message_payload = response_params.get("loading_message")
-                    await telegram_send_message(
-                        request=request, payload=loading_message_payload
-                    )
                     prices = await calculate_prices()
-                    custom_message_payload = {
-                        "chat_id": chat_id,
-                        "prices": prices,
-                        "custom": "show_prices",
-                    }
-
+                    custom_message_payload = response_params.get(
+                        "custom_message_payload"
+                    )
+                    custom_message_payload = custom_message_payload["prices"] = prices
+                    delete_message_payload = response_params.get(
+                        "delete_message_payload"
+                    )
                     response_params = serialize_callback_query(
                         payload=custom_message_payload, db=db
                     )
-
-                    return await telegram_send_message(request, response_params)
+                    await send_message(request=request, payload=loading_message_payload)
+                    await send_message(request, response_params)
+                    return await delete_message(request, payload=delete_message_payload)
                 except Exception as e:
                     logger.error("calculatePrices failed:%s", e)
                     return {"ok": False, "error": "calculating prices failed"}

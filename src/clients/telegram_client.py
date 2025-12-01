@@ -4,7 +4,7 @@ import httpx
 from src.config import logger, settings
 
 
-async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, None]:
+async def send_message(request: Request, payload: Dict) -> Union[Dict, None]:
     send_url = f"https://api.telegram.org/bot{settings.bot_token}/sendMessage"
     params = payload
 
@@ -19,14 +19,12 @@ async def telegram_send_message(request: Request, payload: Dict) -> Union[Dict, 
             payload,
         )
         # Return 200 to avoid Telegram retry storms; log the error for us
-        return {"ok": False, "error": "sendMessage failed"}
+        raise
 
     return {"ok": True}
 
 
-async def telegram_answer_callback_query(
-    request: Request, payload: Dict
-) -> Union[Dict, None]:
+async def answer_callback_query(request: Request, payload: Dict) -> Union[Dict, None]:
     send_url = f"https://api.telegram.org/bot{settings.bot_token}/answerCallbackQuery"
     params = payload
 
@@ -39,14 +37,12 @@ async def telegram_answer_callback_query(
             e,
             getattr(e, "response", None) and e.response.text,
         )
-        return {"ok": False, "error": "answerCallbackQuery failed"}
+        raise
 
     return {"ok": True}
 
 
-async def telegram_edit_messages_text(
-    request: Request, payload: Dict
-) -> Union[Dict, None]:
+async def edit_messages_text(request: Request, payload: Dict) -> Union[Dict, None]:
     send_url = f"https://api.telegram.org/bot{settings.bot_token}/editMessageText"
     params = payload
 
@@ -59,6 +55,22 @@ async def telegram_edit_messages_text(
             e,
             getattr(e, "response", None) and e.response.text,
         )
-        return {"ok": False, "error": "editMessageText failed"}
+        raise
 
+    return {"ok": True}
+
+
+async def delete_message(request: Request, payload: Dict) -> Union[Dict, None]:
+    send_url = f"https://api.telegram.org/bot{settings.bot_token}/deleteMessage"
+    params = payload
+    try:
+        resp = await request.app.state.http.post(send_url, json=params)
+        resp.raise_for_status()
+    except Exception as e:
+        logger.error(
+            "telgram delete_message failed: %s | body=%s",
+            e,
+            getattr(e, "response", None) and e.response.text,
+        )
+        raise
     return {"ok": True}

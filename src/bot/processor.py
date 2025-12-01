@@ -65,7 +65,6 @@ def process_callback_query(
 ):
     try:
         chat = get_chat_by_chat_id(db, chat_id)
-        auth_result = chat_first_level_authentication(db, chat_db=chat)
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
@@ -77,16 +76,11 @@ def process_callback_query(
         if query_data == "accepted_terms":
             if not chat.accepted_terms:
                 update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-            return bot_output.welcome_message(chat_id)
+                return bot_output.welcome_message(chat_id)
+            return bot_output.empty_answer_callback(query_id)
         if query_data == "show_prices":
 
-            if auth_result is True:
-                update_chat_by_chat_id(
-                    db=db, chat_id=chat_id, last_message_id=chat.last_message_id + 1
-                )
-                return bot_output.loading_prices(chat_id)
-            else:
-                return auth_result
+            return bot_output.loading_prices(chat_id)
 
         if query_data == "return_to_menu":
             return (
@@ -96,26 +90,18 @@ def process_callback_query(
             )
         if query_data == "show_terms":
             return (
-                (
-                    bot_output.show_terms_condititons(chat_id, message_id)
-                    if is_last_message(message_id=message_id, chat=chat, db=db) is True
-                    else bot_output.show_terms_condititons(
-                        chat_id, message_id, append=True
-                    )
-                )
-                if auth_result is True
-                else auth_result
+                bot_output.show_terms_condititons(chat_id, message_id)
+                if is_last_message(message_id=message_id, chat=chat, db=db) is True
+                else bot_output.show_terms_condititons(chat_id, message_id, append=True)
             )
+
         if query_data == "support":
             return (
-                (
-                    bot_output.support(chat_id, message_id)
-                    if is_last_message(message_id=message_id, chat=chat, db=db) is True
-                    else bot_output.support(chat_id, message_id, append=True)
-                )
-                if auth_result is True
-                else auth_result
+                bot_output.support(chat_id, message_id)
+                if is_last_message(message_id=message_id, chat=chat, db=db) is True
+                else bot_output.support(chat_id, message_id, append=True)
             )
+
         if query_data == "contact_support":
             return (
                 bot_output.contact_support_info(chat_id, message_id)

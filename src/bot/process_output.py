@@ -157,7 +157,7 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def loading_prices(chat_id: Union[str, int]):
+    def loading_prices(chat_id: Union[str, int], message_id: Union[str, int]):
         return {
             "method": "calculatePrices",
             "loading_message": {
@@ -165,6 +165,8 @@ class TelegrambotOutputs:
                 "text": "🔍 *Getting the most recent up to date prices...*",
                 "parse_mode": "Markdown",
             },
+            "delete_message_payload": {"chat_id": chat_id, "message_id": message_id},
+            "custom_message_payload": {"chat_id": chat_id, "custom": "show_prices"},
         }
 
     @staticmethod
