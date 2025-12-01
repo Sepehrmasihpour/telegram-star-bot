@@ -507,5 +507,64 @@ class TelegrambotOutputs:
             else params
         )
 
+    @staticmethod
+    def contact_support_info(
+        chat_id: Union[str, int],
+        message_id: Optional[Union[str, int]] = None,
+        append: Optional[bool] = False,
+    ):
+        if message_id is None and append is False:
+            raise ValueError("message_id can't be None when append is False")
+
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
+                📞 **Support Contact Information**
+
+                ━━━━━━━━━━━━━━━━━━━━
+
+                👤 **Telegram Support:**
+                • @AutoBlueStarsSupport
+
+                ━━━━━━━━━━━━━━━━━━━━
+
+                ⏰ **Working Hours:**
+                • 24/7 (Available around the clock)
+
+                💡 **Important Notes:**
+                • For the fastest response, provide your invoice ID
+                • In case of payment issues, send your transaction details
+                • For delivery tracking, include your delivery reference
+
+                ━━━━━━━━━━━━━━━━━━━━
+
+                🔗 **Useful Links:**
+                • Official Channel: @AutoBlueStars
+                """
+            ),
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "🔁 Return to Menu", "callback_data": "return_to_menu"}],
+                    [
+                        {
+                            "text": "📞 Return to Support",
+                            "callback_data": "return_to_support",
+                        }
+                    ],
+                ]
+            },
+        }
+
+        if append is False:
+            params["message_id"] = message_id
+
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
+
 
 telegram_process_bot_outputs = TelegrambotOutputs
