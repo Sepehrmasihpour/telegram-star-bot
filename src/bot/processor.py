@@ -80,11 +80,14 @@ def process_callback_query(
             return bot_output.welcome_message(chat_id)
         if query_data == "show_prices":
 
-            return (
-                bot_output.loading_prices(chat_id)
-                if auth_result is True
-                else auth_result
-            )
+            if auth_result is True:
+                update_chat_by_chat_id(
+                    db=db, chat_id=chat_id, last_message_id=chat.last_message_id + 1
+                )
+                return bot_output.loading_prices(chat_id)
+            else:
+                return auth_result
+
         if query_data == "return_to_menu":
             return (
                 bot_output.return_to_menu(chat_id, message_id)
