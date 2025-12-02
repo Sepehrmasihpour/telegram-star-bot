@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.models import Chat
 from src.bot.process_output import telegram_process_bot_outputs as bot_output
+from src.utils.price import calculate_prices
 import re
 
 
@@ -43,7 +44,9 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         raise
 
 
-def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
+async def serialize_callback_query(
+    payload: Dict[str, Any], db: Session
+) -> Dict[str, Any]:
     try:
         if "custom" not in payload:
             from_data = payload.get("from") or {}
@@ -53,14 +56,16 @@ def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, 
             query_data = payload.get("data")
             query_id = payload.get("id")
             is_last_message(message_id=message_id, chat_id=chat_id, db=db)
-            return process_callback_query(query_id, chat_id, query_data, message_id, db)
+            return await process_callback_query(
+                query_id, chat_id, query_data, message_id, db
+            )
         return process_custom_text(payload, db)
     except Exception as e:
         logger.error(f"serialize_callback_query failed:{e}")
         raise
 
 
-def process_callback_query(
+async def process_callback_query(
     query_id: str, chat_id: str, query_data: str, message_id: str, db: Session
 ):
     try:
@@ -79,8 +84,8 @@ def process_callback_query(
                 return bot_output.return_to_menu(chat_id=chat_id, append=True)
             return bot_output.empty_answer_callback(query_id)
         if query_data == "show_prices":
-
-            return bot_output.loading_prices(chat_id, message_id)
+            prices = await calculate_prices()
+            return bot_output.loading_prices(chat_id, message_id, prices)
 
         if query_data == "return_to_menu":
             return (

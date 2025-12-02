@@ -15,7 +15,6 @@ from src.config import settings, logger
 from src.bot.processor import serialize_message, serialize_callback_query
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
-from src.utils.price import calculate_prices
 from src.clients.telegram_client import (
     answer_callback_query,
     edit_messages_text,
@@ -176,7 +175,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             method = response_params.get("method")
         if callback_query is not None:
             try:
-                response_params = serialize_callback_query(
+                response_params = await serialize_callback_query(
                     payload=callback_query, db=db
                 )
             except Exception as e:
@@ -194,25 +193,13 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
                     request=request, payload=response_params.get("params")
                 )
             if method == "calculatePrices":
-                try:
-                    loading_message_payload = response_params.get("loading_message")
-                    prices = await calculate_prices()
-                    custom_message_payload = response_params.get(
-                        "custom_message_payload"
-                    )
-                    custom_message_payload["prices"] = prices
-                    delete_message_payload = response_params.get(
-                        "delete_message_payload"
-                    )
-                    response_params = serialize_callback_query(
-                        payload=custom_message_payload, db=db
-                    )
-                    await send_message(request=request, payload=loading_message_payload)
-                    await send_message(request, response_params)
-                    return await delete_message(request, payload=delete_message_payload)
-                except Exception as e:
-                    logger.error("calculatePrices failed:%s", e)
-                    return {"ok": False, "error": "calculating prices failed"}
+                loading_message_payload = response_params.get("loading_message")
+                delete_message_payload = response_params.get("delete_message_payload")
+                show_prices_payload = response_params.get("prices")
+                await send_message(request=request, payload=loading_message_payload)
+                await send_message(request, show_prices_payload)
+                return await delete_message(request, payload=delete_message_payload)
+
         if message is None and callback_query is None:
             logger.info("Unsupported update type: %s", update.keys())
             return {"ok": True, "ignored": True}  # 200 OK, no retry

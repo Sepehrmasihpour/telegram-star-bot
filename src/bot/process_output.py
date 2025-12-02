@@ -157,7 +157,28 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def loading_prices(chat_id: Union[str, int], message_id: Union[str, int]):
+    def loading_prices(
+        chat_id: Union[str, int], message_id: Union[str, int], prices: Dict
+    ):
+        lines = ["📊 **Current Prices:**", ""]  # Header
+
+        for product_name, variations in prices.items():
+            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")  # fallback emoji
+
+            # product title
+            lines.append(f"{emoji} *{product_name}*")
+
+            # variations and prices
+            for variation, value in variations.items():
+                # format number with commas and add " T"
+                price = f"{value:,} T"
+                lines.append(f"    ➜ {variation}: {price}")
+
+            lines.append("\n━━━━━━━━━━━━━━━━━━━━\n")  # blank line between products
+
+        # Build final string
+        final_text = _t("\n".join(lines))
+
         return {
             "method": "calculatePrices",
             "loading_message": {
@@ -166,7 +187,21 @@ class TelegrambotOutputs:
                 "parse_mode": "Markdown",
             },
             "delete_message_payload": {"chat_id": chat_id, "message_id": message_id},
-            "custom_message_payload": {"chat_id": chat_id, "custom": "show_prices"},
+            "prices": {
+                "chat_id": chat_id,
+                "text": final_text,
+                "parse_mode": "Markdown",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {
+                                "text": "return to main menu",
+                                "callback_data": "return_to_menu",
+                            }
+                        ],
+                    ]
+                },
+            },
         }
 
     @staticmethod
