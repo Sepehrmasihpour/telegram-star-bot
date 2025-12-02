@@ -521,5 +521,51 @@ class TelegrambotOutputs:
             else params
         )
 
+    @staticmethod
+    def common_questions(
+        chat_id: Union[str, int],
+        message_id: Optional[Union[int, str]],
+        append: Optional[bool] = False,
+    ):
+        if message_id is None and append is False:
+            raise ValueError("message_id can't be None when append is False")
+        params = {
+            "chat_id": chat_id,
+            "text": _t(
+                """
+                ❔ **commonly asked Q&A**
+
+                ━━━━━━━━━━━━━━━━━━━━
+                
+                1- ....
+                2- ....
+                3- ....
+                4- ....
+                
+                """
+            ),
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [{"text": "🔁 Return to Menu", "callback_data": "return_to_menu"}],
+                    [
+                        {
+                            "text": "📞 Return to Support",
+                            "callback_data": "return_to_support",
+                        }
+                    ],
+                ]
+            },
+        }
+
+        if append is False:
+            params["message_id"] = message_id
+
+        return (
+            {"method": "editMessageText", "params": params}
+            if append is False
+            else params
+        )
+
 
 telegram_process_bot_outputs = TelegrambotOutputs()

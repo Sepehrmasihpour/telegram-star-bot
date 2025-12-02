@@ -112,7 +112,13 @@ def process_callback_query(
             return (
                 bot_output.support(chat_id, message_id)
                 if is_last_message(message_id=message_id, chat=chat, db=db)
-                else bot_output.support(chat_id, message_id, append=True)
+                else bot_output.support(chat_id, message_id, True)
+            )
+        if query_data == "common_questions":
+            return (
+                bot_output.common_questions(chat_id, message_id)
+                if is_last_message(message_id=message_id, chat=chat, db=db)
+                else bot_output.common_questions(chat_id, message_id, True)
             )
         else:
             ...
