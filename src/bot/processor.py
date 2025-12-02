@@ -108,6 +108,12 @@ def process_callback_query(
                 if is_last_message(message_id=message_id, chat=chat, db=db) is True
                 else bot_output.contact_support_info(chat_id, message_id, append=True)
             )
+        if query_data == "return_to_support":
+            return (
+                bot_output.support(chat_id, message_id)
+                if is_last_message(message_id=message_id, chat=chat, db=db)
+                else bot_output.support(chat_id, message_id, append=True)
+            )
         else:
             ...
     except Exception as e:

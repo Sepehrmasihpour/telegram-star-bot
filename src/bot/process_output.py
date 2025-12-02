@@ -480,7 +480,7 @@ class TelegrambotOutputs:
                 ━━━━━━━━━━━━━━━━━━━━
 
                 👤 **Telegram Support:**
-                • @AutoBlueStarsSupport
+                • @TestSupport
 
                 ━━━━━━━━━━━━━━━━━━━━
 
@@ -495,7 +495,7 @@ class TelegrambotOutputs:
                 ━━━━━━━━━━━━━━━━━━━━
 
                 🔗 **Useful Links:**
-                • Official Channel: @AutoBlueStars
+                • Official Channel: @TestBot
                 """
             ),
             "parse_mode": "Markdown",
