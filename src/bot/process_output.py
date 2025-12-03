@@ -205,51 +205,6 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def show_prices(chat_id: Union[str, int], prices: Dict):
-        """
-        prices = {
-            "product_no1": {"v1": 100000, "v2": 200000, ...},
-            "product_no2": {"v1": 400000, ...},
-            ...
-        }
-        """
-
-        lines = ["📊 **Current Prices:**", ""]  # Header
-
-        for product_name, variations in prices.items():
-            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")  # fallback emoji
-
-            # product title
-            lines.append(f"{emoji} *{product_name}*")
-
-            # variations and prices
-            for variation, value in variations.items():
-                # format number with commas and add " T"
-                price = f"{value:,} T"
-                lines.append(f"    ➜ {variation}: {price}")
-
-            lines.append("\n━━━━━━━━━━━━━━━━━━━━\n")  # blank line between products
-
-        # Build final string
-        final_text = _t("\n".join(lines))
-
-        return {
-            "chat_id": chat_id,
-            "text": final_text,
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "return to main menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
-
-    @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
         return {
             "method": "answerCallback",
