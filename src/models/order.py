@@ -24,7 +24,7 @@ class Order(Base):
     )
     paid_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     items: Mapped[list["OrderItem"]] = relationship(
-        back_Populates="order", cascade="all, delete-orphan"
+        back_populates="order", cascade="all, delete-orphan"
     )
 
 
