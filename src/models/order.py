@@ -35,7 +35,7 @@ class OrderItem(Base):
         ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
     )
     product_version_id: Mapped[int] = mapped_column(
-        ForeignKey("product_versions.id"), nullabel=False
+        ForeignKey("product_versions.id"), nullable=False
     )
     unit_price: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
     quantity: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
