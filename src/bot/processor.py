@@ -1,6 +1,14 @@
 from typing import Dict, Any, Optional, Union
 from src.bot.models import TgChat, Text
-from src.crud.chat import get_chat_by_chat_id, create_chat, update_chat_by_chat_id
+from src.crud.user import (
+    get_chat_by_chat_id,
+    create_chat,
+    update_chat_by_chat_id,
+    create_user,
+    update_user,
+    # get_user_by_id,
+    # get_user_by_phone,
+)
 from sqlalchemy.orm import Session
 from src.config import logger
 from src.models import Chat
@@ -83,6 +91,7 @@ async def process_callback_query(
                 update_chat_by_chat_id(db, chat_id, accepted_terms=True)
                 return bot_output.return_to_menu(chat_id=chat_id, append=True)
             return bot_output.empty_answer_callback(query_id)
+
         if query_data == "show_prices":
             prices = await calculate_prices()
             return bot_output.loading_prices(chat_id, message_id, prices)
@@ -156,11 +165,18 @@ def process_text(chat: TgChat, data: Text, db: Session) -> Dict[str, Any]:
                     return bot_output.phone_max_attempt(chat.id)
                 update_chat_by_chat_id(db, chat.id, phone_input_attempt=attempts + 1)
                 return bot_output.invalid_phone_number(chat.id)
+            """
+            ! we haven't reached that part yet but when we do 
+            ! you should check to see if there is a user with that phone number 
+            ! in the db or not if it is you need to check weather they are 
+            ! the true owner of the phone an if yes delte the current user and chat instances
+            ! and append the new data to the user instance with the phone number already in the db
+            """
+            update_user(db, chat_data.user_id, phone_number=data.text)
             update_chat_by_chat_id(
                 db,
                 chat.id,
                 phone_input_attempt=0,
-                phone_number=data.text,
                 pending_action="waiting_for_otp",
             )
             return bot_output.phone_numebr_verification(chat.id)
@@ -193,8 +209,13 @@ def chat_first_level_authentication(
 
         chat = chat_db or get_chat_by_chat_id(db, chat_id=data.id)
         if chat is None:
+            new_user = create_user(db)
             create_chat(
-                db, chat_id=data.id, first_name=data.first_name, username=data.username
+                db,
+                user_id=new_user.id,
+                chat_id=data.id,
+                first_name=data.first_name,
+                username=data.username,
             )
 
             return bot_output.terms_and_conditions(data.id, append=True)
@@ -211,12 +232,13 @@ def chat_second_lvl_authentication(
 ) -> Dict[str, Any] | bool:
     try:
         chat = chat_db or get_chat_by_chat_id(db, chat_id=data.id)
-        if not chat.phone_number:
+        user = chat.user
+        if not user.phone_number:
             update_chat_by_chat_id(
                 db, data.id, pending_action="waiting_for_phone_number"
             )
             return bot_output.phone_number_input(chat.chat_id)
-        if not chat.phone_number_validated:
+        if not user.phone_number_validated:
             return bot_output.phone_number_verfication_needed(chat.chat_id)
         return True
     except Exception as e:
