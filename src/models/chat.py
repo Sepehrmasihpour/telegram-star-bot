@@ -3,6 +3,17 @@ from sqlalchemy import Integer, Boolean, String, UniqueConstraint, DateTime
 from src.db.base import Base
 from datetime import datetime
 
+"""
+TODO
+make the chat model a relationaly depandant model to the user model 
+and change the flow of the bot to reflect this as in whenever the chat instance 
+gets created in the current flow you need to create the user flow insted witch the chat
+instance is the child of that instace as well
+this will save us headaches in the future
+TODO
+
+"""
+
 
 class Chat(Base):
     __tablename__ = "chats"

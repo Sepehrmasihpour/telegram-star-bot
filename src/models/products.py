@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Numeric, ForeignKey
+from sqlalchemy import Integer, String, Numeric, ForeignKey, Enum as SAEnum
 from typing import List
 from src.db.base import Base
 from decimal import Decimal
@@ -9,7 +9,7 @@ from enum import Enum
 class PricingStrategy(str, Enum):
     FIXED = "fixed"
     MARKET = "market"
-    MARKET_PLUST_MARGIN = "market_plus_margin "
+    MARKET_PLUS_MARGIN = "market_plus_margin"
 
 
 class Product(Base):
@@ -17,9 +17,8 @@ class Product(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    market_symbol: Mapped[str | None] = mapped_column(String(50), nullable=True)
     pricing_strategy: Mapped[PricingStrategy] = mapped_column(
-        Enum(PricingStrategy), nullable=False, default=PricingStrategy.FIXED
+        SAEnum(PricingStrategy), nullable=False, default=PricingStrategy.FIXED
     )
     market_symbol: Mapped[str | None] = mapped_column(String(50), nullable=True)
     versions: Mapped[List["ProductVersion"]] = relationship(
@@ -39,7 +38,7 @@ class ProductVersion(Base):
     )
     code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     price: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
-    units: Mapped[int] = mapped_column(Integer, nullable=True)
+    units: Mapped[int] = mapped_column(Integer, nullable=False)
     version_name: Mapped[str] = mapped_column(String(250), nullable=False)
     margin_bps: Mapped[int | None] = mapped_column(Integer, nullable=True)
     product: Mapped["Product"] = relationship(back_populates="versions")
