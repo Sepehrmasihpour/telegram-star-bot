@@ -1,7 +1,11 @@
+import re
 from typing import Dict, Any, Optional, Union
-from sqlalchemy.orm import Session
+from decimal import Decimal
+from src.services.pricing import get_version_price
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import select
 from src.config import logger
-from src.models import Chat
+from src.models import Chat, Product
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.crud.user import (
@@ -10,6 +14,8 @@ from src.crud.user import (
     update_chat_by_chat_id,
     create_user,
 )
+
+_PHONE_PATTERN = re.compile(r"^09\d{9}$")
 
 
 def chat_first_level_authentication(
@@ -83,3 +89,35 @@ def is_last_message(
     except Exception as e:
         logger.error(f"is_last_message function failed:{e}")
         raise
+
+
+def get_prices(
+    db: Session, message_id: str, chat_id: str, append: bool
+) -> Dict[str, Any]:
+    try:
+        stmt = (
+            select(Product)
+            .where(Product.display_in_bot.is_(True))
+            .options(joinedload(Product.versions))
+        )
+
+        products = db.scalars(stmt).all()
+        result: Dict[str, Dict[str, Decimal]] = {}
+
+        for product in products:
+            product_key = f"{product.name}"
+
+            version_map: Dict[str, Decimal] = {}
+            for version in product.versions:
+                price = get_version_price(version, db)
+                version_map[version.version_code] = price
+
+            result[product_key] = version_map
+        return result
+    except Exception as e:
+        logger.error(f"chat_flow/get_prices failed:{e}")
+        raise
+
+
+def phone_number_authenticator(phone: str) -> bool:
+    return bool(_PHONE_PATTERN.match(phone))

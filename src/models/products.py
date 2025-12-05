@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Integer, String, Numeric, ForeignKey, Enum as SAEnum
+from sqlalchemy import Integer, String, Numeric, ForeignKey, Enum as SAEnum, Boolean
 from typing import List
 from src.db.base import Base
 from decimal import Decimal
@@ -21,6 +21,9 @@ class Product(Base):
         SAEnum(PricingStrategy), nullable=False, default=PricingStrategy.FIXED
     )
     market_symbol: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    display_in_bot: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default="false"
+    )
     versions: Mapped[List["ProductVersion"]] = relationship(
         back_populates="product",
         cascade="all, delete-orphan",

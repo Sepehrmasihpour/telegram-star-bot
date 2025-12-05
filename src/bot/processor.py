@@ -2,12 +2,12 @@ from typing import Dict, Any
 from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
-from src.utils.phone_number import phone_number_authenticator
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
     is_last_message,
+    phone_number_authenticator,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -27,9 +27,7 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
             raise NotPrivateChat("Only private chats are supported.")
         if chat_data.get("id") != from_data.get("id"):
             raise NotPrivateChat("chat.id and from.id must match for private messages.")
-        message_id = payload.get("message_id")
         chat = TgChat(**chat_data)
-        is_last_message(message_id=message_id, chat_id=chat.id, db=db)
         data = payload.get("text")
         return process_text(chat, data, db)
 
@@ -48,7 +46,6 @@ async def serialize_callback_query(
         message_id = message.get("message_id")
         query_data = payload.get("data")
         query_id = payload.get("id")
-        is_last_message(message_id=message_id, chat_id=chat_id, db=db)
         return await process_callback_query(
             query_id, chat_id, query_data, message_id, db
         )
@@ -62,6 +59,7 @@ async def process_callback_query(
 ):
     try:
         chat = get_chat_by_chat_id(db, chat_id)
+        last_message = is_last_message(message_id=message_id, db=db, chat=chat)
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
@@ -83,39 +81,39 @@ async def process_callback_query(
         if query_data == "return_to_menu":
             return (
                 bot_output.return_to_menu(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db)
+                if last_message is True
                 else bot_output.return_to_menu(chat_id, message_id, append=True)
             )
         if query_data == "show_terms":
             return (
                 bot_output.show_terms_condititons(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db) is True
+                if last_message is True
                 else bot_output.show_terms_condititons(chat_id, message_id, append=True)
             )
 
         if query_data == "support":
             return (
                 bot_output.support(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db) is True
+                if last_message is True
                 else bot_output.support(chat_id, message_id, append=True)
             )
 
         if query_data == "contact_support":
             return (
                 bot_output.contact_support_info(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db) is True
+                if last_message is True
                 else bot_output.contact_support_info(chat_id, message_id, append=True)
             )
         if query_data == "return_to_support":
             return (
                 bot_output.support(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db)
+                if last_message is True
                 else bot_output.support(chat_id, message_id, True)
             )
         if query_data == "common_questions":
             return (
                 bot_output.common_questions(chat_id, message_id)
-                if is_last_message(message_id=message_id, chat=chat, db=db)
+                if last_message is True
                 else bot_output.common_questions(chat_id, message_id, True)
             )
         else:

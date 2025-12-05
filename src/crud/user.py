@@ -105,7 +105,6 @@ def create_chat(
     Create a Chat record for a given user.
     """
     try:
-        # ensure user exists; if you prefer, you can skip this and rely on FK error
         user = db.get(User, user_id)
         if not user:
             raise ValueError(f"User with id={user_id} not found")
