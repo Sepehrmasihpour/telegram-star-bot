@@ -25,24 +25,24 @@ def seed_initial_products(db: Session) -> None:
             "name": "Premium Stars Pack",
             "display_in_bot": True,
             "versions": [
-                {"version_code": "v1", "price": 15000},
-                {"version_code": "v2", "price": 30000},
+                {"code": "v1", "price": 15000},
+                {"code": "v2", "price": 30000},
             ],
         },
         {
             "name": "Telegram Premium Upgrade",
             "display_in_bot": True,
             "versions": [
-                {"version_code": "1_month", "price": 120000},
-                {"version_code": "12_months", "price": 1100000},
+                {"code": "1_month", "price": 120000},
+                {"code": "12_months", "price": 1100000},
             ],
         },
         {
             "name": "Special Offer Bundle",
             "display_in_bot": False,
             "versions": [
-                {"version_code": "std", "price": 9999},
-                {"version_code": "plus", "price": 15999},
+                {"code": "std", "price": 9999},
+                {"code": "plus", "price": 15999},
             ],
         },
     ]
@@ -59,7 +59,7 @@ def seed_initial_products(db: Session) -> None:
         for v in p["versions"]:
             version = ProductVersion(
                 product_id=product.id,
-                version_code=v["version_code"],
+                code=v["code"],
                 # you can add price here if you have a price field
             )
             db.add(version)
