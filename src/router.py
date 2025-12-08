@@ -169,8 +169,8 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             except Exception as e:
                 logger.error("Serialize_message/route failed: %s", e)
                 return {"ok": False, "error": "serializing message failed"}
-
-            return await dispatch_response(request, db, response_params)
+            dispatch_response = await dispatch_response(request, db, response_params)
+            return dispatch_response
         if callback_query is not None:
             try:
                 response_params = await serialize_callback_query(
@@ -179,7 +179,10 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             except Exception as e:
                 logger.error("seraializing_callback_query failed: %s", e)
                 return {"ok": False, "error": "serializing callback failed"}
-            return await dispatch_response(request, db, response_params)
+            logger.debug(f"response_params at router:{response_params}")
+            dispatch_response = await dispatch_response(request, db, response_params)
+            logger.debug(f"dispatch_response at router:{dispatch_response}")
+            return dispatch_response
 
         if message is None and callback_query is None:
             logger.info("Unsupported update type: %s", update.keys())
