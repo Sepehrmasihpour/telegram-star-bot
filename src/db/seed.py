@@ -58,9 +58,7 @@ def seed_initial_products(db: Session) -> None:
 
         for v in p["versions"]:
             version = ProductVersion(
-                product_id=product.id,
-                code=v["code"],
-                # you can add price here if you have a price field
+                product_id=product.id, code=v["code"], price=v["price"]
             )
             db.add(version)
 
