@@ -16,9 +16,10 @@ from src.bot.processor import serialize_message, serialize_callback_query
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
 from src.bot.dispathcer import dispatch_response
+from src.db.seed import seed_initial_products
 
 from sqlalchemy.orm import Session
-from src.db import get_db
+from src.db import get_db, SessionLocal
 
 router = APIRouter()
 
@@ -78,7 +79,12 @@ async def lifespan(app: FastAPI):
         if using_ngrok:
             stop_ngrok_tunnel()
         raise RuntimeError(f"Failed to set Telegram webhook: {e}") from e
-
+    try:
+        db: Session = SessionLocal()
+        seed_initial_products(db)
+        db.close()
+    except Exception as e:
+        logger.error(f"Database seeding failed: {e}")
     # ---- hand control to the app ----
     try:
         yield
@@ -159,7 +165,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         # 4) route + build reply for message update
         if message is not None:
             try:
-                response_params = serialize_message(message, db, request)
+                response_params = serialize_message(message, db)
             except Exception as e:
                 logger.error("Serialize_message/route failed: %s", e)
                 return {"ok": False, "error": "serializing message failed"}
@@ -168,12 +174,12 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         if callback_query is not None:
             try:
                 response_params = await serialize_callback_query(
-                    payload=callback_query, db=db, request=request
+                    payload=callback_query, db=db
                 )
             except Exception as e:
                 logger.error("seraializing_callback_query failed: %s", e)
                 return {"ok": False, "error": "serializing callback failed"}
-            return dispatch_response(request, db, response_params)
+            return await dispatch_response(request, db, response_params)
 
         if message is None and callback_query is None:
             logger.info("Unsupported update type: %s", update.keys())
