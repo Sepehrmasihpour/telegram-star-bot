@@ -29,7 +29,8 @@ async def dispatch_response(
                 request=request, payload=payload.get("params")
             )
         if method == "custom":
-            return await custom_handler(request, db, payload.get("payload"))
+            data = payload.get("payload")
+            return await custom_handler(request, db, data)
 
     except Exception as e:
         logger.error(f"diapatch_response failed:{e}")
@@ -42,7 +43,7 @@ async def custom_handler(request: Request, db: Session, payload: Dict[str, Any])
         custom = payload.get("custom")
         if custom == "get_prices":
             await send_message(request, payload=payload.get("message"))
-            prices = get_prices(db)
+            prices = await get_prices(db)
             logger.debug(f"prices at custom_handler for get_peices : {prices}")
             chat_id = payload.get("chat_id")
             resp = telegram_process_bot_outputs.get_prices(

@@ -164,7 +164,7 @@ class TelegrambotOutputs:
             "method": "custom",
             "payload": {
                 "chat_id": chat_id,
-                "custom": "get_prices ",
+                "custom": "get_prices",
                 "message": {
                     "chat_id": chat_id,
                     "text": "💰 please wait a moment to get the most up to date prices",
