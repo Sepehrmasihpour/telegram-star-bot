@@ -41,7 +41,6 @@ class ProductVersion(Base):
     )
     code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
     price: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
-    units: Mapped[int] = mapped_column(Integer, nullable=False)
     version_name: Mapped[str] = mapped_column(String(250), nullable=False)
     margin_bps: Mapped[int | None] = mapped_column(Integer, nullable=True)
     product: Mapped["Product"] = relationship(back_populates="versions")
