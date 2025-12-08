@@ -47,7 +47,7 @@ async def custom_handler(request: Request, db: Session, payload: Dict[str, Any])
             resp = telegram_process_bot_outputs.get_prices(
                 chat_id=chat_id, prices=prices
             )
-            return await send_message(resp)
+            return await send_message(request, payload=resp)
     except Exception as e:
         logger.error(f"custom_handler at dispathcer failed:{e}")
         raise
