@@ -91,7 +91,7 @@ def is_last_message(
         raise
 
 
-async def get_prices(
+def get_prices(
     db: Session,
 ) -> Dict[str, Any]:
     try:
@@ -101,7 +101,7 @@ async def get_prices(
             .options(joinedload(Product.versions))
         )
 
-        products = db.scalars(stmt).all()
+        products = db.execute(stmt).unique().scalars().all()
         result: Dict[str, Dict[str, Decimal]] = {}
 
         for product in products:
