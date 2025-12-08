@@ -110,7 +110,7 @@ def get_prices(
             version_map: Dict[str, Decimal] = {}
             for version in product.versions:
                 price = get_version_price(version, db)
-                version_map[version.version_code] = price
+                version_map[version.code] = price
 
             result[product_key] = version_map
         return result
