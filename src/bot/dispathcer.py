@@ -42,7 +42,8 @@ async def custom_handler(request: Request, db: Session, payload: Dict[str, Any])
         custom = payload.get("custom")
         if custom == "get_prices":
             await send_message(request, payload=payload.get("message"))
-            prices = await get_prices(db)
+            prices = get_prices(db)
+            logger.debug(f"prices at custom_handler for get_peices : {prices}")
             chat_id = payload.get("chat_id")
             resp = telegram_process_bot_outputs.get_prices(
                 chat_id=chat_id, prices=prices

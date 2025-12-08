@@ -91,7 +91,7 @@ def is_last_message(
         raise
 
 
-async def get_prices(
+def get_prices(
     db: Session,
 ) -> Dict[str, Any]:
     try:
