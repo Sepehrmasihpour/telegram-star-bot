@@ -91,8 +91,8 @@ def is_last_message(
         raise
 
 
-def get_prices(
-    db: Session, message_id: str, chat_id: str, append: bool
+async def get_prices(
+    db: Session,
 ) -> Dict[str, Any]:
     try:
         stmt = (

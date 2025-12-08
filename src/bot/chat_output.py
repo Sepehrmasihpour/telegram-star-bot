@@ -1,6 +1,8 @@
 from typing import Union, Dict
 from textwrap import dedent
 from typing import Optional
+from decimal import Decimal
+from typing import Any
 
 
 def _t(s: str) -> str:
@@ -157,50 +159,54 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def loading_prices(
-        chat_id: Union[str, int], message_id: Union[str, int], prices: Dict
-    ):
-        lines = ["📊 **Current Prices:**", ""]  # Header
+    def loading_prices(chat_id: Union[str, int]):
+        return {
+            "method": "custom",
+            "payload": {
+                "chat_id": chat_id,
+                "custom": "get_prices ",
+                "message": {
+                    "chat_id": chat_id,
+                    "text": "💰 please wait a moment to get the most up to date prices",
+                },
+            },
+        }
+
+    @staticmethod
+    def get_prices(
+        chat_id: Union[str, int],
+        prices: Dict[str, Dict[str, Decimal]],
+    ) -> Dict[str, Any]:
+        lines: list[str] = ["📊 **Current Prices:**", ""]  # header
 
         for product_name, variations in prices.items():
             emoji = PRODUCT_EMOJIS.get(product_name, "🛒")  # fallback emoji
-
-            # product title
             lines.append(f"{emoji} *{product_name}*")
 
-            # variations and prices
             for variation, value in variations.items():
-                # format number with commas and add " T"
-                price = f"{value:,} T"
-                lines.append(f"    ➜ {variation}: {price}")
+                if isinstance(value, Decimal):
+                    normalized = value.quantize(Decimal("1"))
+                    price_str = f"{normalized:,} T"
 
-            lines.append("\n━━━━━━━━━━━━━━━━━━━━\n")  # blank line between products
+                else:
+                    price_str = f"{value:,} T"
 
-        # Build final string
+                lines.append(f"    ➜ {variation}: {price_str}")
+            lines.append("━━━━━━━━━━━━━━━━━━━━")
         final_text = _t("\n".join(lines))
-
         return {
-            "method": "calculatePrices",
-            "loading_message": {
-                "chat_id": chat_id,
-                "text": "🔍 *Getting the most recent up to date prices...*",
-                "parse_mode": "Markdown",
-            },
-            "delete_message_payload": {"chat_id": chat_id, "message_id": message_id},
-            "prices": {
-                "chat_id": chat_id,
-                "text": final_text,
-                "parse_mode": "Markdown",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "return to main menu",
-                                "callback_data": "return_to_menu",
-                            }
-                        ],
-                    ]
-                },
+            "chat_id": chat_id,
+            "text": final_text,
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "return to main menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
             },
         }
 

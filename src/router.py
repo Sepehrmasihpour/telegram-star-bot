@@ -15,13 +15,7 @@ from src.config import settings, logger
 from src.bot.processor import serialize_message, serialize_callback_query
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
-from src.clients.telegram_client import (
-    answer_callback_query,
-    edit_messages_text,
-    send_message,
-    delete_message,
-    # send_message,
-)
+from src.bot.dispathcer import dispatch_response
 
 from sqlalchemy.orm import Session
 from src.db import get_db
@@ -165,40 +159,21 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
         # 4) route + build reply for message update
         if message is not None:
             try:
-                response_params = serialize_message(message, db)
+                response_params = serialize_message(message, db, request)
             except Exception as e:
                 logger.error("Serialize_message/route failed: %s", e)
                 return {"ok": False, "error": "serializing message failed"}
 
-            if "method" not in response_params:
-                return await send_message(request=request, payload=response_params)
-            method = response_params.get("method")
+            return await dispatch_response(request, db, response_params)
         if callback_query is not None:
             try:
                 response_params = await serialize_callback_query(
-                    payload=callback_query, db=db
+                    payload=callback_query, db=db, request=request
                 )
             except Exception as e:
                 logger.error("seraializing_callback_query failed: %s", e)
                 return {"ok": False, "error": "serializing callback failed"}
-            if "method" not in response_params:
-                return await send_message(request=request, payload=response_params)
-            method = response_params.get("method")
-            if method == "answerCallback":
-                return await answer_callback_query(
-                    request=request, payload=response_params.get("params")
-                )
-            if method == "editMessageText":
-                return await edit_messages_text(
-                    request=request, payload=response_params.get("params")
-                )
-            if method == "calculatePrices":
-                loading_message_payload = response_params.get("loading_message")
-                delete_message_payload = response_params.get("delete_message_payload")
-                show_prices_payload = response_params.get("prices")
-                await send_message(request=request, payload=loading_message_payload)
-                await send_message(request, show_prices_payload)
-                return await delete_message(request, payload=delete_message_payload)
+            return dispatch_response(request, db, response_params)
 
         if message is None and callback_query is None:
             logger.info("Unsupported update type: %s", update.keys())
