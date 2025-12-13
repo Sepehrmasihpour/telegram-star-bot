@@ -181,7 +181,7 @@ class TelegrambotOutputs:
 
         for product_name, variations in prices.items():
             emoji = PRODUCT_EMOJIS.get(product_name, "🛒")
-            lines.append(f"{emoji} *{product_name}*")
+            lines.append(f"{emoji} *{product_name}*\n")
 
             for variation, value in variations.items():
                 if isinstance(value, Decimal):
@@ -191,7 +191,7 @@ class TelegrambotOutputs:
                 else:
                     price_str = f"{value:,} T"
 
-                lines.append(f"    ➜ {variation}:" + f" {price_str}")
+                lines.append(f"    ➜**{variation}:**" + f" {price_str}")
                 lines.append("━━━━━━━━━━━━━━━━━━━━")
         final_text = _t("\n".join(lines))
         return {
