@@ -177,10 +177,10 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         prices: Dict[str, Dict[str, Decimal]],
     ) -> Dict[str, Any]:
-        lines: list[str] = ["📊 **Current Prices:**", ""]  # header
+        lines: list[str] = ["📊 **Current Prices:**", ""]
 
         for product_name, variations in prices.items():
-            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")  # fallback emoji
+            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")
             lines.append(f"{emoji} *{product_name}*")
 
             for variation, value in variations.items():
@@ -191,7 +191,8 @@ class TelegrambotOutputs:
                 else:
                     price_str = f"{value:,} T"
 
-                lines.append(f"    ➜ {variation}: {price_str}")
+                lines.append(f"    ➜ **{variation}**: {price_str}")
+                lines.append("━━━━━━━━━━━━━━━━━━━━")
             lines.append("━━━━━━━━━━━━━━━━━━━━")
         final_text = _t("\n".join(lines))
         return {
