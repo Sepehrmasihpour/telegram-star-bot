@@ -191,9 +191,9 @@ class TelegrambotOutputs:
                 else:
                     price_str = f"{value:,} T"
 
-                lines.append(f"    ➜ **{variation}**: " + f"{price_str}")
-                lines.append("━━━━━━━━━━━━━━━━━━━━")
-            lines.append("\n")
+                lines.append(f"    ➜ **{variation}** ")
+                lines.append(f"    💰price: {price_str}")
+                lines.append("━━━━━━━━━━━━━━━━━━━━\n")
         final_text = _t("\n".join(lines))
         return {
             "chat_id": chat_id,
