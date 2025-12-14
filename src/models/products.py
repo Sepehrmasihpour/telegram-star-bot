@@ -24,6 +24,7 @@ class Product(Base):
     display_in_bot: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
+    emoji_symbol: Mapped[str | None] = mapped_column(String(50), nullable=True)
     versions: Mapped[List["ProductVersion"]] = relationship(
         back_populates="product",
         cascade="all, delete-orphan",

@@ -10,10 +10,30 @@ def _t(s: str) -> str:
     return dedent(s).strip()
 
 
-PRODUCT_EMOJIS = {
-    "product_no1": "⭐",
-    "product_no2": "💎",
-    "product_no3": "🤖",
+EMOJI_PAIRINGS = {
+    # Status / feedback
+    "star": "⭐",
+    "robot": "🤖",
+    "package": "📦",
+    "gift": "🎁",
+    "money": "💰",
+    "coin": "🪙",
+    "credit_card": "💳",
+    "bell": "🔔",
+    "lock": "🔒",
+    "unlock": "🔓",
+    "key": "🔑",
+    "shield": "🛡️",
+    "clock": "⏰",
+    "calendar": "📅",
+    "progress": "📊",
+    "chart_up": "📈",
+    "chart_down": "📉",
+    "admin": "👑",
+    "fire": "🔥",
+    "sparkles": "✨",
+    "diamond": "💎",
+    None: "",
 }
 
 
@@ -175,12 +195,12 @@ class TelegrambotOutputs:
     @staticmethod
     def get_prices(
         chat_id: Union[str, int],
-        prices: Dict[str, Dict[str, Decimal]],
+        prices: Dict[str, Dict[str, Decimal | str]],
     ) -> Dict[str, Any]:
         lines: list[str] = ["📊 **Current Prices:**", ""]
 
         for product_name, variations in prices.items():
-            emoji = PRODUCT_EMOJIS.get(product_name, "🛒")
+            emoji = EMOJI_PAIRINGS.get(variations.get("emoji_symbol"), "🛒")
             lines.append(f"{emoji} *{product_name}*\n")
 
             for variation, value in variations.items():

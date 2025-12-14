@@ -107,10 +107,11 @@ def get_prices(
         for product in products:
             product_key = f"{product.name}"
 
-            version_map: Dict[str, Decimal] = {}
+            version_map: Dict[str, Decimal | str] = {}
             for version in product.versions:
                 price = get_version_price(version, db)
                 version_map[version.version_name] = price
+            version_map["emoji"] = product.emoji_symbol
 
             result[product_key] = version_map
         return result
