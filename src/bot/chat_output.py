@@ -200,7 +200,7 @@ class TelegrambotOutputs:
         lines: list[str] = ["📊 **Current Prices:**", ""]
 
         for product_name, variations in prices.items():
-            emoji = EMOJI_PAIRINGS.get(variations.get("emoji_symbol"), "🛒")
+            emoji = EMOJI_PAIRINGS.get(variations.get("emoji"), "🛒")
             lines.append(f"{emoji} *{product_name}*\n")
 
             for variation, value in variations.items():
