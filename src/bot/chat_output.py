@@ -33,7 +33,6 @@ EMOJI_PAIRINGS = {
     "fire": "🔥",
     "sparkles": "✨",
     "diamond": "💎",
-    None: "",
 }
 
 
