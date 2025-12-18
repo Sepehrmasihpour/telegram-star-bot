@@ -102,17 +102,15 @@ def get_prices(
         )
 
         products = db.execute(stmt).unique().scalars().all()
-        result: Dict[str, Dict[Dict[str, Decimal] | str]] = {}
+        result: Dict[str, Dict[str, Decimal]] = {}
 
         for product in products:
             product_key = f"{product.name}"
 
-            version_map: Dict[str, Dict[str, Decimal] | str] = {}
-            prices = Dict{str,Decimal} = {}
+            version_map: Dict[str, Decimal | str] = {}
             for version in product.versions:
                 price = get_version_price(version, db)
-                prices[version.version_name] = price
-                version_map["price"] = prices
+                version_map[version.version_name] = price
 
             result[product_key] = version_map
         return result
