@@ -347,26 +347,28 @@ class TelegrambotOutputs:
 
         # --------- dynamic text ----------
         if products:
-            products_text = "\n".join(
-                [f"{EMOJI_PAIRINGS.get(p.name)} **{p.name}**" for p in products]
-            )
+            lines = []
+            for p in products:
+                emoji = EMOJI_PAIRINGS.get(p.name, "🛒")  # fallback emoji
+                lines.append(f"{emoji} *{p.name}*")  # use *...* for Markdown emphasis
+            products_text = "\n".join(lines)
             hint_text = "💡 Choose a product below:"
         else:
             products_text = "• *(No products are available right now.)*"
             hint_text = "💡 Please check back later."
 
-        text = _t(
-            f"""
-            🌟 **Welcome to the test bot!**
-            
-            ━━━━━━━━━━━━━━━━━━━━
-
-            {hint_text}
-
-            {_t(products_text)}
-
-            ━━━━━━━━━━━━━━━━━━━━
-            """
+        text = "\n".join(
+            [
+                "🌟 *Welcome to the test bot!*",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+                "",
+                hint_text,
+                "",
+                products_text,
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+            ]
         )
 
         # --------- dynamic keyboard (one button per product) ----------
