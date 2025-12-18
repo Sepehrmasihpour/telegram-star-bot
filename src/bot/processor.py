@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
-from src.crud.products import get_products
+from src.crud.products import get_products, get_product_by_id
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
@@ -126,6 +126,12 @@ async def process_callback_query(
                 bot_output.common_questions(chat_id, message_id)
                 if last_message is True
                 else bot_output.common_questions(chat_id, message_id, True)
+            )
+        if query_data.startswith("buy_product:"):
+            _, product_id = query_data.split(":", 1)
+            product = get_product_by_id(db=db, id=product_id)
+            return bot_output.buy_product(
+                chat_id=chat_id, message_id=message_id, product=product
             )
         else:
             ...

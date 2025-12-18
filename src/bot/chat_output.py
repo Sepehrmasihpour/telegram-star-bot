@@ -209,6 +209,11 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
+    def buy_product(
+        chat_id: Union[str, int], message_id: Union[int, str], product: Product
+    ): ...
+
+    @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
         return {
             "method": "answerCallback",
