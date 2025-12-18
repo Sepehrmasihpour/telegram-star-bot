@@ -348,7 +348,7 @@ class TelegrambotOutputs:
         # --------- dynamic text ----------
         if products:
             products_text = "".join(
-                [f"{EMOJI_PAIRINGS.get(p.name)} **{p.name}**" for p in products]
+                [f"{EMOJI_PAIRINGS.get(p.name)} **{p.name}**\n" for p in products]
             )
             hint_text = "💡 Choose a product below:"
         else:
