@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
+from src.crud.products import get_products
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
@@ -71,17 +72,28 @@ async def process_callback_query(
         if query_data == "accepted_terms":
             if not chat.accepted_terms:
                 update_chat_by_chat_id(db, chat_id, accepted_terms=True)
-                return bot_output.return_to_menu(chat_id=chat_id, append=True)
+                products = get_products(db=db)
+                return bot_output.return_to_menu(
+                    products=products, chat_id=chat_id, append=True
+                )
             return bot_output.empty_answer_callback(query_id)
 
         if query_data == "show_prices":
             return bot_output.loading_prices(chat_id)
 
         if query_data == "return_to_menu":
+            products = get_products(db=db)
             return (
-                bot_output.return_to_menu(chat_id, message_id)
+                bot_output.return_to_menu(
+                    products=products, chat_id=chat_id, message_id=message_id
+                )
                 if last_message is True
-                else bot_output.return_to_menu(chat_id, message_id, append=True)
+                else bot_output.return_to_menu(
+                    products=products,
+                    chat_id=chat_id,
+                    message_id=message_id,
+                    append=True,
+                )
             )
         if query_data == "show_terms":
             return (
@@ -128,8 +140,11 @@ def process_text(chat: TgChat, text: str, db: Session) -> Dict[str, Any]:
         if chat_data is None or chat_data.pending_action is None:
             auth_result = chat_first_level_authentication(db, chat, chat_data)
             if text == "/start":
+                products = get_products(db=db)
                 return (
-                    bot_output.return_to_menu(chat.id, append=True)
+                    bot_output.return_to_menu(
+                        products=products, chat_id=chat.id, append=True
+                    )
                     if auth_result is True
                     else auth_result
                 )

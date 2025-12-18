@@ -1,4 +1,5 @@
-from typing import Union, Dict
+from typing import Union, Dict, List
+from src.models import Product
 from textwrap import dedent
 from typing import Optional
 from decimal import Decimal
@@ -337,59 +338,65 @@ class TelegrambotOutputs:
     @staticmethod
     def return_to_menu(
         chat_id: Union[str, int],
+        products: List[Product],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
     ):
         if message_id is None and append is False:
             raise ValueError("message_id can't be none when append is false")
+
+        # --------- dynamic text ----------
+        if products:
+            products_text = "\n".join(
+                [f"{EMOJI_PAIRINGS.get(p.name)} **{p.name}**" for p in products]
+            )
+            hint_text = "💡 Choose a product below:"
+        else:
+            products_text = "• *(No products are available right now.)*"
+            hint_text = "💡 Please check back later."
+
+        text = _t(
+            f"""
+            🌟 **Welcome to the test bot!**
+            
+            ━━━━━━━━━━━━━━━━━━━━
+
+            {hint_text}
+
+            {products_text}
+
+            ━━━━━━━━━━━━━━━━━━━━
+            """
+        )
+
+        # --------- dynamic keyboard (one button per product) ----------
+        # callback_data format recommendation:
+        #   buy_product:<product_id>
+        product_rows = [
+            [{"text": f"🛒 Buy {p.name}", "callback_data": f"buy_product:{p.id}"}]
+            for p in (products or [])
+        ]
+
+        # --------- append your static actions ----------
+        keyboard = product_rows + [
+            [{"text": "💰 Show prices", "callback_data": "show_prices"}],
+            [{"text": "📜 Show terms of service", "callback_data": "show_terms"}],
+            [{"text": "🆘 Support", "callback_data": "support"}],
+        ]
+
         params = {
             "chat_id": chat_id,
-            "text": _t(
-                """
-                🌟 **Welcome to the test bot!**
-                
-                ━━━━━━━━━━━━━━━━━━━━
-
-                💡To buy product no1, product no2, product no3, press the relevant button.
-
-                ━━━━━━━━━━━━━━━━━━━━
-                """
-            ),
+            "text": text,
             "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [{"text": "🤖product no1", "callback_data": "buy_product_1"}],
-                    [
-                        {
-                            "text": "🛒buy product no2",
-                            "callback_data": "buy_product_2",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🎯buy product no3",
-                            "callback_data": "buy_product_3",
-                        }
-                    ],
-                    [{"text": "💰show prices", "callback_data": "show_prices"}],
-                    [
-                        {
-                            "text": "📜show terms of service",
-                            "callback_data": "show_terms",
-                        }
-                    ],
-                    [{"text": "🆘support", "callback_data": "support"}],
-                ]
-            },
+            "reply_markup": {"inline_keyboard": keyboard},
         }
 
         if append is False:
             params["message_id"] = message_id
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
-        )
+            return {"method": "editMessageText", "params": params}
+
+        # append=True => sendMessage style payload
+        return params
 
     @staticmethod
     def support(

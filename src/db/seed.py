@@ -24,7 +24,6 @@ def seed_initial_products(db: Session) -> None:
         {
             "name": "Premium Stars Pack",
             "display_in_bot": True,
-            "emoji_symbol": "star",
             "versions": [
                 {"code": "v1", "price": 15000, "version_name": "version 1"},
                 {"code": "v2", "price": 30000, "version_name": "version 2"},
@@ -33,7 +32,6 @@ def seed_initial_products(db: Session) -> None:
         {
             "name": "Telegram Premium Upgrade",
             "display_in_bot": True,
-            "emoji_symbol": "diamond",
             "versions": [
                 {"code": "1_month", "price": 120000, "version_name": "one month"},
                 {"code": "12_months", "price": 1100000, "version_name": "12 month"},
@@ -42,7 +40,6 @@ def seed_initial_products(db: Session) -> None:
         {
             "name": "Special Offer Bundle",
             "display_in_bot": False,
-            "emoji_symbol": None,
             "versions": [
                 {"code": "std", "price": 9999, "version_name": "special"},
                 {"code": "plus", "price": 15999, "version_name": "super special"},
@@ -55,7 +52,6 @@ def seed_initial_products(db: Session) -> None:
         product = Product(
             name=p["name"],
             display_in_bot=p["display_in_bot"],
-            emoji_symbol=p["emoji_symbol"],
         )
         db.add(product)
         db.flush()  # get product.id before adding versions
