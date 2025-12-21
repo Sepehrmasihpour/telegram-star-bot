@@ -217,7 +217,7 @@ class TelegrambotOutputs:
         lines: List[str] = []
         emoji = EMOJI_PAIRINGS.get(product.name, "🛒")
         versions = product.versions
-        for version_name, version_price in version_prices:
+        for version_name, version_price in version_prices.items():
             lines.append(f"{emoji} **{version_name}**")
             lines.append(f"💰 **price:{version_price}**")
             lines.append("━━━━━━━━━━━━━━━━━━━━")
@@ -232,7 +232,12 @@ class TelegrambotOutputs:
             ]
         )
         version_rows = [
-            [{"text": f"🛒 {v.name}", "callback_data": f"buy_product_version:{v.id}"}]
+            [
+                {
+                    "text": f"🛒 {v.version_name}",
+                    "callback_data": f"buy_product_version:{v.id}",
+                }
+            ]
             for v in versions
         ]
         keyboard = version_rows + [
@@ -242,7 +247,7 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": text,
             "parse_mode": "Markdown",
-            "reply_markup": keyboard,
+            "reply_markup": {"inline_keyboard": keyboard},
         }
 
     @staticmethod

@@ -130,8 +130,7 @@ async def process_callback_query(
             )
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
-            product = get_product_by_id(db=db, id=product_id)
-            logger.debug(product)
+            product = get_product_by_id(db=db, id=int(product_id))
             versions_prices = get_product_prices(db=db, product=product)
             return bot_output.buy_product(
                 chat_id=chat_id,

@@ -121,7 +121,7 @@ def get_prices(
 
 def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
     try:
-        version_map = Dict[str, Decimal | str] = {}
+        version_map: Dict[str, Decimal | str] = {}
         for version in product.versions:
             price = get_version_price(version, db)
             version_map[version.version_name] = price
