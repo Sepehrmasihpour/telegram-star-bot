@@ -172,6 +172,7 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
             resp = await dispatch_response(request, db, response_params)
             return resp
         if callback_query is not None:
+            logger.debug(callback_query)
             try:
                 response_params = await serialize_callback_query(
                     payload=callback_query, db=db
