@@ -220,14 +220,16 @@ class TelegrambotOutputs:
         for version_name, version_price in versions_prices.items():
             lines.append(f"{emoji} **{version_name}**")
             lines.append(f"💰 **price:{version_price}**")
-            lines.append("━━━━━━━━━━━━━━━━━━━━")
+            lines.append("━━━━━━━━━━━━━━━━━━━━\n")
         prices_text = "\n".join(lines)
         text = "\n".join(
             [
                 f"🎉 *Buying {product.name}!*",
+                "",
                 "**list of prices** 📋",
                 "",
                 prices_text,
+                "",
                 "💡 *In order to choose the desired product press the releavent button*",
             ]
         )
