@@ -3,7 +3,8 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
-from src.crud.products import get_products, get_product_by_id
+from src.crud.products import get_products, get_product_by_id, get_product_version_by_id
+from src.services.pricing import get_version_price
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
@@ -136,6 +137,19 @@ async def process_callback_query(
                 chat_id=chat_id,
                 product=product,
                 versions_prices=versions_prices,
+            )
+        if query_data.startswith("but_product_version:"):
+            _, prodcut_version_id = query_data.split(":", 1)
+            product_version = get_product_version_by_id(
+                db=db, id=int(prodcut_version_id)
+            )
+            product_version_price = get_version_price(version=product_version, db=db)
+            order_id = 1  #! when the customer choses a product version an order object needs to be created in the db and this will be the id of that object
+            return bot_output.but_product_version(
+                chat_id=chat_id,
+                product_version=product_version,
+                price=product_version_price,
+                order_id=order_id,
             )
         else:
             ...

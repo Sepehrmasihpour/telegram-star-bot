@@ -1,5 +1,5 @@
 from typing import Union, Dict, List
-from src.models import Product
+from src.models import Product, ProductVersion
 from textwrap import dedent
 from typing import Optional
 from decimal import Decimal
@@ -244,6 +244,49 @@ class TelegrambotOutputs:
         ]
         keyboard = version_rows + [
             [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}]
+        ]
+        return {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": {"inline_keyboard": keyboard},
+        }
+
+    @staticmethod
+    def buy_product_version(
+        chat_id: Union[int, str],
+        product_version: ProductVersion,
+        price: Decimal,
+        order_id: int,
+    ):
+        product = product_version.product
+        product_name = product.name
+        emoji = EMOJI_PAIRINGS.get(product_name, "🛒")
+        text = "\n".join(
+            [
+                "🛒 **Chosen product:",
+                f"{emoji} {product_version.version_name}",
+                "",
+                f"💰 Price: {price}",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+                "💳 please chose your payment method:",
+                "",
+                "💻 payment gateway-online payment with test gateway",
+                "*₿* crypto-payment using crypto currency",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+            ]
+        )
+        keyboard = [
+            [
+                {
+                    "text": "💻 payment gateway",
+                    "callback_data": f"payment_gateway:{order_id}",
+                }
+            ],
+            [{"text": "*₿* crypto", "callback_data": f"crypto_payment:{order_id}"}],
+            [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}],
         ]
         return {
             "chat_id": chat_id,

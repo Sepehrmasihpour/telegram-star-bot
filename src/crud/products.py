@@ -2,7 +2,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from src.models import Product
+from src.models import Product, ProductVersion
 from src.config import logger
 
 
@@ -21,4 +21,12 @@ def get_product_by_id(db: Session, id: int) -> Product | None:
         return db.get(Product, id)
     except SQLAlchemyError as e:
         logger.error(f"get_product_by_id failed:{e}")
+        raise
+
+
+def get_product_version_by_id(db: Session, id: int) -> ProductVersion | None:
+    try:
+        return db.get(ProductVersion, id)
+    except SQLAlchemyError as e:
+        logger.error(f"get_product_version_by_id failed:{e}")
         raise
