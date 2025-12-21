@@ -9,6 +9,7 @@ from src.bot.chat_flow import (
     # chat_second_lvl_authentication,
     is_last_message,
     phone_number_authenticator,
+    get_product_prices,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -130,8 +131,11 @@ async def process_callback_query(
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
             product = get_product_by_id(db=db, id=product_id)
+            versions_prices = get_product_prices(db=db, product=product)
             return bot_output.buy_product(
-                chat_id=chat_id, message_id=message_id, product=product
+                chat_id=chat_id,
+                product=product,
+                versions_prices=versions_prices,
             )
         else:
             ...

@@ -119,5 +119,18 @@ def get_prices(
         raise
 
 
+def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
+    try:
+        version_map = Dict[str, Decimal | str] = {}
+        for version in product.versions:
+            price = get_version_price(version, db)
+            version_map[version.version_name] = price
+        return version_map
+
+    except Exception as e:
+        logger.error(f"get_product_prices at services failed:{e}")
+        raise
+
+
 def phone_number_authenticator(phone: str) -> bool:
     return bool(_PHONE_PATTERN.match(phone))

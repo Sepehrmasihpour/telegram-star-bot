@@ -210,8 +210,40 @@ class TelegrambotOutputs:
 
     @staticmethod
     def buy_product(
-        chat_id: Union[str, int], message_id: Union[int, str], product: Product
-    ): ...
+        chat_id: Union[str, int],
+        product: Product,
+        version_prices,
+    ) -> Dict[str, Any]:
+        lines: List[str] = []
+        emoji = EMOJI_PAIRINGS.get(product.name, "🛒")
+        versions = product.versions
+        for version_name, version_price in version_prices:
+            lines.append(f"{emoji} **{version_name}**")
+            lines.append(f"💰 **price:{version_price}**")
+            lines.append("━━━━━━━━━━━━━━━━━━━━")
+        prices_text = "\n".join(lines)
+        text = "\n".join(
+            [
+                f"🎉 *Buying {product.name}!*",
+                "**list of prices** 📋",
+                "",
+                prices_text,
+                "💡 *In order to choose the desired product press the releavent button*",
+            ]
+        )
+        version_rows = [
+            [{"text": f"🛒 {v.name}", "callback_data": f"buy_product_version:{v.id}"}]
+            for v in versions
+        ]
+        keyboard = version_rows + [
+            [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}]
+        ]
+        return {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": keyboard,
+        }
 
     @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
