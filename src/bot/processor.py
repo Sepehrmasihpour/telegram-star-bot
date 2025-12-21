@@ -145,7 +145,7 @@ async def process_callback_query(
             )
             product_version_price = get_version_price(version=product_version, db=db)
             order_id = 1  #! when the customer choses a product version an order object needs to be created in the db and this will be the id of that object
-            return bot_output.but_product_version(
+            return bot_output.buy_product_version(
                 chat_id=chat_id,
                 product_version=product_version,
                 price=product_version_price,
