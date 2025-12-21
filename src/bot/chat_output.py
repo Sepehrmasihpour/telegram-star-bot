@@ -212,12 +212,12 @@ class TelegrambotOutputs:
     def buy_product(
         chat_id: Union[str, int],
         product: Product,
-        version_prices,
+        versions_prices,
     ) -> Dict[str, Any]:
         lines: List[str] = []
         emoji = EMOJI_PAIRINGS.get(product.name, "🛒")
         versions = product.versions
-        for version_name, version_price in version_prices.items():
+        for version_name, version_price in versions_prices.items():
             lines.append(f"{emoji} **{version_name}**")
             lines.append(f"💰 **price:{version_price}**")
             lines.append("━━━━━━━━━━━━━━━━━━━━")
