@@ -134,7 +134,7 @@ def process_callback_query(
                 product=product,
                 versions_prices=versions_prices,
             )
-        if query_data.startswith("but_product_version:"):
+        if query_data.startswith("buy_product_version:"):
             _, prodcut_version_id = query_data.split(":", 1)
             product_version = get_product_version_by_id(
                 db=db, id=int(prodcut_version_id)
