@@ -39,9 +39,7 @@ def serialize_message(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
         raise
 
 
-async def serialize_callback_query(
-    payload: Dict[str, Any], db: Session
-) -> Dict[str, Any]:
+def serialize_callback_query(payload: Dict[str, Any], db: Session) -> Dict[str, Any]:
     try:
         from_data = payload.get("from") or {}
         chat_id = from_data.get("id")
@@ -49,15 +47,13 @@ async def serialize_callback_query(
         message_id = message.get("message_id")
         query_data = payload.get("data")
         query_id = payload.get("id")
-        return await process_callback_query(
-            query_id, chat_id, query_data, message_id, db
-        )
+        return process_callback_query(query_id, chat_id, query_data, message_id, db)
     except Exception as e:
         logger.error(f"serialize_callback_query failed:{e}")
         raise
 
 
-async def process_callback_query(
+def process_callback_query(
     query_id: str, chat_id: str, query_data: str, message_id: str, db: Session
 ):
     try:
