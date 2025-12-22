@@ -265,7 +265,7 @@ class TelegrambotOutputs:
         text = "\n".join(
             [
                 "🛒 **Chosen product:",
-                f"{emoji} {product_version.version_name}",
+                f"{emoji} {product.name}-{product_version.version_name}",
                 "",
                 f"💰 Price: {price}",
                 "",
@@ -285,7 +285,7 @@ class TelegrambotOutputs:
                     "callback_data": f"payment_gateway:{order_id}",
                 }
             ],
-            [{"text": "*₿* crypto", "callback_data": f"crypto_payment:{order_id}"}],
+            [{"text": "₿ crypto", "callback_data": f"crypto_payment:{order_id}"}],
             [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}],
         ]
         return {
