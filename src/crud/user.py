@@ -2,6 +2,7 @@ from typing import Optional, Any
 
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import select
 
 from src.models import User, Chat
 from src.config import logger
@@ -41,6 +42,15 @@ def get_user_by_phone(db: Session, phone_number: str) -> User | None:
         return db.query(User).filter(User.phone_number == phone_number).first()
     except SQLAlchemyError:
         logger.exception("failed to fetch user by phone_number=%s", phone_number)
+        raise
+
+
+def get_user_by_chat_id(db: Session, chat_id: str) -> User | None:
+    try:
+        stmt = select(User).join(User.chats).where(Chat.chat_id == int(chat_id))
+        return db.execute(stmt).scalars().first()
+    except SQLAlchemyError as e:
+        logger.error("get_user_by_chat_id failed: %s", e)
         raise
 
 
