@@ -65,9 +65,9 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         attempts = chat_data.phone_input_attempt
         if attempts >= 3:
             update_chat(db, chat_data.id, phone_input_attempt=0, pending_action=None)
-            return bot_output.phone_max_attempt(chat_data.id)
+            return bot_output.phone_max_attempt(chat_data.chat_id)
         update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
-        return bot_output.invalid_phone_number(chat_data.id)
+        return bot_output.invalid_phone_number(chat_data.chat_id)
     """
     ! we haven't reached that part yet but when we do 
     ! you should check to see if there is a user with that phone number 
@@ -82,7 +82,7 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         phone_input_attempt=0,
         pending_action="waiting_for_otp",
     )
-    return bot_output.phone_numebr_verification(chat_data.id)
+    return bot_output.phone_numebr_verification(chat_data.chat_id)
 
 
 def otp_verify(text: str, chat: Chat):
