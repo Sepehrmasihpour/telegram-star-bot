@@ -45,14 +45,13 @@ def chat_first_level_authentication(
 
 
 def chat_second_lvl_authentication(
-    db: Session, data: Optional[TgChat] = None, chat_db: Optional[Chat] = None
+    db: Session, chat: Optional[Chat] = None
 ) -> Dict[str, Any] | bool:
     try:
-        chat = chat_db or get_chat_by_chat_id(db, chat_id=data.id)
         user = chat.user
         if not user.phone_number:
             update_chat_by_chat_id(
-                db, data.id, pending_action="waiting_for_phone_number"
+                db, chat.id, pending_action="waiting_for_phone_number"
             )
             return bot_output.phone_number_input(chat.chat_id)
         if not user.phone_number_validated:

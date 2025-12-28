@@ -8,7 +8,7 @@ from src.crud.order import create_order_with_items, CreateOrderItemIn
 from src.services.pricing import get_version_price
 from src.bot.chat_flow import (
     chat_first_level_authentication,
-    # chat_second_lvl_authentication,
+    chat_second_lvl_authentication,
     is_last_message,
     get_product_prices,
     phone_number_input,
@@ -136,6 +136,7 @@ def process_callback_query(
                 versions_prices=versions_prices,
             )
         if query_data.startswith("buy_product_version:"):
+            chat_second_lvl_authentication(db=db, chat=chat)
             _, prodcut_version_id = query_data.split(":", 1)
             product_version = get_product_version_by_id(
                 db=db, id=int(prodcut_version_id)
