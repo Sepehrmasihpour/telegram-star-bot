@@ -14,6 +14,7 @@ from src.crud.user import (
     update_chat_by_chat_id,
     create_user,
     update_user,
+    update_chat,
 )
 
 _PHONE_PATTERN = re.compile(r"^09\d{9}$")
@@ -44,15 +45,11 @@ def chat_first_level_authentication(
         raise
 
 
-def chat_second_lvl_authentication(
-    db: Session, chat: Optional[Chat] = None
-) -> Dict[str, Any] | bool:
+def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | bool:
     try:
         user = chat.user
         if not user.phone_number:
-            update_chat_by_chat_id(
-                db, chat.id, pending_action="waiting_for_phone_number"
-            )
+            update_chat(db, chat.id, pending_action="waiting_for_phone_number")
             return bot_output.phone_number_input(chat.chat_id)
         if not user.phone_number_validated:
             return bot_output.phone_number_verfication_needed(chat.chat_id)
@@ -67,11 +64,9 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
     if not valid_phone_number:
         attempts = chat_data.phone_input_attempt
         if attempts >= 3:
-            update_chat_by_chat_id(
-                db, chat_data.id, phone_input_attempt=0, pending_action=None
-            )
+            update_chat(db, chat_data.id, phone_input_attempt=0, pending_action=None)
             return bot_output.phone_max_attempt(chat_data.id)
-        update_chat_by_chat_id(db, chat_data.id, phone_input_attempt=attempts + 1)
+        update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
         return bot_output.invalid_phone_number(chat_data.id)
     """
     ! we haven't reached that part yet but when we do 
@@ -81,7 +76,7 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
     ! and append the new data to the user instance with the phone number already in the db
     """
     update_user(db, chat_data.user_id, phone_number=phone_number)
-    update_chat_by_chat_id(
+    update_chat(
         db,
         chat_data.id,
         phone_input_attempt=0,
