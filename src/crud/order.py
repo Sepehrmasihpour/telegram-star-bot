@@ -171,7 +171,7 @@ def create_order_with_items(
             if qty <= 0:
                 raise ValueError("quantity must be > 0")
 
-            unit_price = get_version_price(pv)
+            unit_price = get_version_price(version=pv, db=db)
             db.add(
                 OrderItem(
                     order_id=order.id,
