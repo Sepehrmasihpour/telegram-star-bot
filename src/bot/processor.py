@@ -180,9 +180,9 @@ def process_text(chat: TgChat, text: str, db: Session) -> Dict[str, Any]:
                 else auth_result
             )
         if chat_data.pending_action == "waiting_for_phone_number":
-            phone_number_input(db=db, phone_number=text, chat_data=chat_data)
+            return phone_number_input(db=db, phone_number=text, chat_data=chat_data)
         if chat_data.pending_action == "waiting_for_otp":
-            otp_verify(text=text, chat=chat_data)
+            return otp_verify(text=text, chat=chat_data)
         else:
             raise UnsuportedTextInput("unsupported command or text input")
     except Exception as e:
