@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, DateTime, Numeric, Enum as SAEnum
+from sqlalchemy import ForeignKey, DateTime, Numeric, Integer, Enum as SAEnum
 from src.db.base import Base
 from datetime import datetime
 from decimal import Decimal
@@ -38,7 +38,9 @@ class OrderItem(Base):
         ForeignKey("product_versions.id"), nullable=False
     )
     unit_price: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
-    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 8), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(
+        Integer, nullable=False, default=1, server_default="1"
+    )
 
     order: Mapped["Order"] = relationship(back_populates="items")
     product_version: Mapped["ProductVersion"] = relationship()

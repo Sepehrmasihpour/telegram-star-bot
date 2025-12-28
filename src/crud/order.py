@@ -6,10 +6,14 @@ from decimal import Decimal
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from src.config import logger
 from src.models.order import Order, OrderItem, OrderStatus
 from src.models.products import ProductVersion
+from typing import Sequence
+from src.services.pricing import get_version_price
+from src.crud.products import get_product_version_by_id
 
 
 # --- Small input DTOs (optional but clean) ---
@@ -18,7 +22,7 @@ from src.models.products import ProductVersion
 @dataclass(frozen=True)
 class CreateOrderItemIn:
     product_version_id: int
-    quantity: Decimal
+    quantity: int = 1
 
 
 # --- Helpers ---
@@ -81,12 +85,8 @@ def create_order_item(
     unit_price: Decimal | None = None,
     commit: bool = True,
 ) -> OrderItem:
-    """
-    Create one OrderItem linked to an existing Order.
-    unit_price defaults to product_version.price if not provided.
-    """
     try:
-        qty = _as_decimal(quantity)
+        qty = quantity
         if qty <= 0:
             raise ValueError("quantity must be > 0")
 
@@ -105,7 +105,6 @@ def create_order_item(
         db.add(item)
         db.flush()
 
-        # keep order.total_amount consistent
         line_total = price * qty
         order.total_amount = (
             _as_decimal(order.total_amount or Decimal("0")) + line_total
@@ -120,4 +119,78 @@ def create_order_item(
     except SQLAlchemyError as e:
         db.rollback()
         logger.error("create_order_item failed: %s", e)
+        raise
+
+
+def create_order_with_items(
+    db: Session,
+    *,
+    user_id: int,
+    items: Sequence[CreateOrderItemIn],
+    status: OrderStatus = OrderStatus.WAITING_FOR_PAYMENT,
+    created_at: datetime | None = None,
+    commit: bool = True,
+) -> Order:
+    """
+    Atomic creation:
+      - creates Order
+      - validates product versions
+      - creates OrderItems
+      - computes total_amount
+    """
+    try:
+        if not items:
+            raise ValueError("items must not be empty")
+
+        # 1) Fetch all requested ProductVersions in one query
+        pv_ids = [i.product_version_id for i in items]
+        stmt = select(ProductVersion).where(ProductVersion.id.in_(pv_ids))
+        versions = db.execute(stmt).scalars().all()
+
+        versions_by_id = {v.id: v for v in versions}
+        missing = [pv_id for pv_id in pv_ids if pv_id not in versions_by_id]
+        if missing:
+            raise ValueError(f"Unknown product_version_id(s): {missing}")
+
+        # 2) Create the order
+        order = Order(
+            user_id=user_id,
+            status=status,
+            created_at=created_at or _utcnow(),
+            total_amount=Decimal("0"),
+            paid_at=None,
+        )
+        db.add(order)
+        db.flush()  # order.id available now
+
+        # 3) Create items + compute total
+        total = Decimal("0")
+        for req in items:
+            pv = versions_by_id[req.product_version_id]
+            qty = req.quantity
+            if qty <= 0:
+                raise ValueError("quantity must be > 0")
+
+            unit_price = get_version_price(pv)
+            db.add(
+                OrderItem(
+                    order_id=order.id,
+                    product_version_id=pv.id,
+                    unit_price=unit_price,
+                    quantity=qty,
+                )
+            )
+            total += unit_price * qty
+
+        order.total_amount = total
+
+        if commit:
+            db.commit()
+            db.refresh(order)
+            # items are relationship-loaded lazily unless you eager load later
+
+        return order
+    except (SQLAlchemyError, ValueError) as e:
+        db.rollback()
+        logger.error("create_order_with_items failed: %s", e)
         raise

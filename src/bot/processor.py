@@ -4,9 +4,8 @@ from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
 from src.crud.products import get_products, get_product_by_id, get_product_version_by_id
+from src.crud.order import create_order_with_items, CreateOrderItemIn
 from src.services.pricing import get_version_price
-from src.models import Order, OrderItem
-from src.crud.order import create_order_instance, create_order_item_instance
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
@@ -18,7 +17,7 @@ from src.crud.user import (
     get_chat_by_chat_id,
     update_chat_by_chat_id,
     update_user,
-    get_user_by_chat_id,
+    # get_user_by_id,
     # get_user_by_phone,
 )
 
@@ -142,13 +141,17 @@ def process_callback_query(
                 db=db, id=int(prodcut_version_id)
             )
             product_version_price = get_version_price(version=product_version, db=db)
-            user_id = get_user_by_chat_id(db=Session, chat_id=chat_id)
-            order = create_order_instance(db=db, order=Order())
+            order = create_order_with_items(
+                db=db,
+                user_id=chat.user_id,
+                items=[CreateOrderItemIn(product_version_id=prodcut_version_id)],
+                commit=True,
+            )
             return bot_output.buy_product_version(
                 chat_id=chat_id,
                 product_version=product_version,
                 price=product_version_price,
-                order_id=order_id,
+                order_id=order.id,
             )
         else:
             ...
