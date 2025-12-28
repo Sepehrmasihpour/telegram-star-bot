@@ -13,7 +13,6 @@ from src.models.order import Order, OrderItem, OrderStatus
 from src.models.products import ProductVersion
 from typing import Sequence
 from src.services.pricing import get_version_price
-from src.crud.products import get_product_version_by_id
 
 
 # --- Small input DTOs (optional but clean) ---

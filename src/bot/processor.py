@@ -10,13 +10,13 @@ from src.bot.chat_flow import (
     chat_first_level_authentication,
     # chat_second_lvl_authentication,
     is_last_message,
-    phone_number_authenticator,
     get_product_prices,
+    phone_number_input,
+    otp_verify,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
     update_chat_by_chat_id,
-    update_user,
     # get_user_by_id,
     # get_user_by_phone,
 )
@@ -165,48 +165,21 @@ def process_text(chat: TgChat, text: str, db: Session) -> Dict[str, Any]:
         chat_data = get_chat_by_chat_id(db, chat.id)
         if chat_data is None or chat_data.pending_action is None:
             auth_result = chat_first_level_authentication(db, chat, chat_data)
-            if text == "/start":
-                products = get_products(db=db)
-                return (
-                    bot_output.return_to_menu(
-                        products=products, chat_id=chat.id, append=True
-                    )
-                    if auth_result is True
-                    else auth_result
+        if text == "/start":
+            products = get_products(db=db)
+            return (
+                bot_output.return_to_menu(
+                    products=products, chat_id=chat.id, append=True
                 )
-            else:
-                raise UnsuportedTextInput("unsupported command or text input")
-        if chat_data.pending_action == "waiting_for_phone_number":
-            valid_phone_number = phone_number_authenticator(text)
-            if not valid_phone_number:
-                attempts = chat_data.phone_input_attempt
-                if attempts >= 3:
-                    update_chat_by_chat_id(
-                        db, chat.id, phone_input_attempt=0, pending_action=None
-                    )
-                    return bot_output.phone_max_attempt(chat.id)
-                update_chat_by_chat_id(db, chat.id, phone_input_attempt=attempts + 1)
-                return bot_output.invalid_phone_number(chat.id)
-            """
-            ! we haven't reached that part yet but when we do 
-            ! you should check to see if there is a user with that phone number 
-            ! in the db or not if it is you need to check weather they are 
-            ! the true owner of the phone an if yes delte the current user and chat instances
-            ! and append the new data to the user instance with the phone number already in the db
-            """
-            update_user(db, chat_data.user_id, phone_number=text)
-            update_chat_by_chat_id(
-                db,
-                chat.id,
-                phone_input_attempt=0,
-                pending_action="waiting_for_otp",
+                if auth_result is True
+                else auth_result
             )
-            return bot_output.phone_numebr_verification(chat.id)
+        if chat_data.pending_action == "waiting_for_phone_number":
+            phone_number_input(db=db, phone_number=text, chat_data=chat_data)
         if chat_data.pending_action == "waiting_for_otp":
-            if text != "1111":
-                return bot_output.invalid_otp(chat.id)
-            return bot_output.phone_number_verified(chat.id)
-
+            otp_verify(text=text, chat=chat_data)
+        else:
+            raise UnsuportedTextInput("unsupported command or text input")
     except Exception as e:
         logger.error(f"procces_text failed:{e}")
         raise
