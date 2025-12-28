@@ -60,6 +60,8 @@ def process_callback_query(
     try:
         chat = get_chat_by_chat_id(db, chat_id)
         last_message = is_last_message(message_id=message_id, db=db, chat=chat)
+        if chat.pending_action is not None:
+            return bot_output.empty_answer_callback(query_id)
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
