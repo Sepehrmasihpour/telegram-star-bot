@@ -144,7 +144,7 @@ def process_callback_query(
             order = create_order_with_items(
                 db=db,
                 user_id=chat.user_id,
-                items=[CreateOrderItemIn(product_version_id=prodcut_version_id)],
+                items=[CreateOrderItemIn(product_version_id=int(prodcut_version_id))],
                 commit=True,
             )
             return bot_output.buy_product_version(
