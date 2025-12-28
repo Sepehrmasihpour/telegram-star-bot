@@ -136,7 +136,9 @@ def process_callback_query(
                 versions_prices=versions_prices,
             )
         if query_data.startswith("buy_product_version:"):
-            chat_second_lvl_authentication(db=db, chat=chat)
+            auth = chat_second_lvl_authentication(db=db, chat=chat)
+            if auth is not True:
+                return auth
             _, prodcut_version_id = query_data.split(":", 1)
             product_version = get_product_version_by_id(
                 db=db, id=int(prodcut_version_id)
