@@ -80,7 +80,8 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         )
         return chat_second_lvl_authentication(db=db, chat=chat_data)
 
-    chat_data = update_user(db, chat_data.user_id, phone_number=phone_number)
+    update_user(db, chat_data.user_id, phone_number=phone_number)
+    chat_data = get_chat_by_chat_id(db=db, chat_id=chat_data.chat_id)
     return chat_second_lvl_authentication(db=db, chat=chat_data)
 
 
