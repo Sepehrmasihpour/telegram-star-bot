@@ -168,16 +168,13 @@ def process_callback_query(
 def process_text(chat: TgChat, text: str, db: Session) -> Dict[str, Any]:
     try:
         chat_data = get_chat_by_chat_id(db, chat.id)
-        if chat_data is None or chat_data.pending_action is None:
-            auth_result = chat_first_level_authentication(db, chat, chat_data)
+        auth = chat_first_level_authentication(db=db, data=chat, chat_db=chat_data)
+        if auth is not True:
+            return auth
         if text == "/start":
             products = get_products(db=db)
-            return (
-                bot_output.return_to_menu(
-                    products=products, chat_id=chat.id, append=True
-                )
-                if auth_result is True
-                else auth_result
+            return bot_output.return_to_menu(
+                products=products, chat_id=chat.id, append=True
             )
         if chat_data.pending_action == "waiting_for_phone_number":
             return phone_number_input(db=db, phone_number=text, chat_data=chat_data)

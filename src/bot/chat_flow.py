@@ -15,6 +15,7 @@ from src.crud.user import (
     create_user,
     update_user,
     update_chat,
+    get_user_by_phone,
 )
 
 _PHONE_PATTERN = re.compile(r"^09\d{9}$")
@@ -47,12 +48,14 @@ def chat_first_level_authentication(
 
 def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | bool:
     try:
-        user = chat.user
-        if not user.phone_number:
-            update_chat(db, chat.id, pending_action="waiting_for_phone_number")
-            return bot_output.phone_number_input(chat.chat_id)
-        if not user.phone_number_validated:
-            return bot_output.phone_number_verfication_needed(chat.chat_id)
+        if chat.chat_verified is not True:
+            user = chat.user
+            if not user.phone_number:
+                update_chat(db, chat.id, pending_action="waiting_for_phone_number")
+                return bot_output.phone_number_input(chat.chat_id)
+            return bot_output.phone_number_verfication_needed(
+                chat.chat_id, phone_number=user.phone_number
+            )
         return True
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
@@ -68,28 +71,24 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
             return bot_output.phone_max_attempt(chat_data.chat_id)
         update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
         return bot_output.invalid_phone_number(chat_data.chat_id)
-    """
-    ! we haven't reached that part yet but when we do 
-    ! you should check to see if there is a user with that phone number 
-    ! in the db or not if it is you need to check weather they are 
-    ! the true owner of the phone an if yes delte the current user and chat instances
-    ! and append the new data to the user instance with the phone number already in the db
-    """
-    update_user(db, chat_data.user_id, phone_number=phone_number)
-    update_chat(
-        db,
-        chat_data.id,
-        phone_input_attempt=0,
-        pending_action="waiting_for_otp",
-    )
-    return bot_output.phone_numebr_verification(chat_data.chat_id)
+    # *check weather there is a user with this phone number in the db
+    # * if there is a user with this phone number change the FK of this chat to that user
+    user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
+    if user_with_the_same_phone:
+        chat_data = update_chat_by_chat_id(
+            db=db, chat_id=chat_data.id, user_id=user_with_the_same_phone.id
+        )
+        return chat_second_lvl_authentication(db=db, chat=chat_data)
+
+    chat_data = update_user(db, chat_data.user_id, phone_number=phone_number)
+    return chat_second_lvl_authentication(db=db, chat=chat_data)
 
 
 def otp_verify(text: str, chat: Chat):
     #!This is very much a place holder for later
     if text != "1111":
-        return bot_output.invalid_otp(chat.id)
-    return bot_output.phone_number_verified(chat.id)
+        return bot_output.invalid_otp(chat.chat_id)
+    return bot_output.phone_number_verified(chat.chat_id)
 
 
 def is_last_message(

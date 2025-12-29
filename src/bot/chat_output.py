@@ -50,12 +50,12 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def phone_number_verfication_needed(chat_id: Union[str, int]):
+    def phone_number_verfication_needed(chat_id: Union[str, int], phone_number: str):
         return {
             "chat_id": chat_id,
             "text": _t(
-                """
-                ❌ **Your phone number has not been verified**
+                f"""
+                ❌ **Your phone number ({phone_number}) has not been verified**
                 📱 In order to continue please verify your phone number.
                 """
             ),
@@ -64,7 +64,7 @@ class TelegrambotOutputs:
                 "inline_keyboard": [
                     [
                         {
-                            "text": "📱send verification code",
+                            "text": "📱send verification code to phone number",
                             "callback_data": "send_validation_code",
                         }
                     ],
@@ -100,35 +100,6 @@ class TelegrambotOutputs:
             "chat_id": chat_id,
             "text": "❌ *phone number is invalid*",
             "parse_mode": "Markdown",
-        }
-
-    @staticmethod
-    def phone_numebr_verification(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                ✅ **The verification code has been sent to your phone number.**
-                Please enter the code.
-
-                💳 **Important points about bank accounts:**
-                .the account that you use for payment must belong to the owner of the phone number
-                .the system verifies whether the phone number and the account number belong to the same person
-                .in case they don't, your payment will not go through
-                .if the account belongs to someone else, please use another account
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📝Edit phone number",
-                            "callback_data": "edit_phone_number",
-                        }
-                    ],
-                ]
-            },
         }
 
     @staticmethod
