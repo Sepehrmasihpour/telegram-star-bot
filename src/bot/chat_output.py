@@ -103,6 +103,35 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
+    def phone_numebr_verification(chat_id: Union[str, int]):
+        return {
+            "chat_id": chat_id,
+            "text": _t(
+                """
+                ✅ **The verification code has been sent to your phone number.**
+                Please enter the code.
+
+                💳 **Important points about bank accounts:**
+                .the account that you use for payment must belong to the owner of the phone number
+                .the system verifies whether the phone number and the account number belong to the same person
+                .in case they don't, your payment will not go through
+                .if the account belongs to someone else, please use another account
+                """
+            ),
+            "parse_mode": "Markdown",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "📝Edit phone number",
+                            "callback_data": "edit_phone_number",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
     def invalid_otp(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,

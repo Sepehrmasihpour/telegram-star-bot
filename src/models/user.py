@@ -7,7 +7,7 @@ from datetime import datetime
 class User(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    phone_number: Mapped[str] = mapped_column(String(13), nullable=True)
+    phone_number: Mapped[str] = mapped_column(String(13), nullable=True, unique=True)
     phone_number_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )

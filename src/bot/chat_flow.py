@@ -66,22 +66,23 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
     valid_phone_number = phone_number_authenticator(phone_number)
     if not valid_phone_number:
         attempts = chat_data.phone_input_attempt
-        if attempts >= 3:
+        if attempts >= 2:
             update_chat(db, chat_data.id, phone_input_attempt=0, pending_action=None)
             return bot_output.phone_max_attempt(chat_data.chat_id)
         update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
         return bot_output.invalid_phone_number(chat_data.chat_id)
-    # *check weather there is a user with this phone number in the db
-    # * if there is a user with this phone number change the FK of this chat to that user
     user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
     if user_with_the_same_phone:
-        chat_data = update_chat_by_chat_id(
-            db=db, chat_id=chat_data.id, user_id=user_with_the_same_phone.id
+        chat_data = update_chat(
+            db=db,
+            chat_id_pk=chat_data.id,
+            user_id=user_with_the_same_phone.id,
+            pending_action=None,
         )
         return chat_second_lvl_authentication(db=db, chat=chat_data)
 
-    update_user(db, chat_data.user_id, phone_number=phone_number)
-    chat_data = get_chat_by_chat_id(db=db, chat_id=chat_data.chat_id)
+    update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
+    chat_data = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
     return chat_second_lvl_authentication(db=db, chat=chat_data)
 
 
