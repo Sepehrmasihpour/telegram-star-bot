@@ -79,6 +79,16 @@ def buy_product(db: Session, chat: Chat, product_id: int) -> Dict | None:
     )
 
 
+def edit_phone_number(db: Session, chat: Chat):
+    update_chat(
+        db=db,
+        chat_id_pk=chat.id,
+        chat_verified=False,
+        pending_action="waiting_for_phone_number",
+    )
+    return bot_output.phone_number_input
+
+
 def buy_product_version(
     db: Session, chat: Chat, product_version_id: int
 ) -> Dict | None:
@@ -123,6 +133,12 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
     update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
     chat_data = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
     return chat_second_lvl_authentication(db=db, chat=chat_data)
+
+
+def send_otp(db: Session, chat: Chat):
+    #! this is a placeholder for when we actually send the otp
+    update_chat(db=db, chat_id_pk=chat.id, pending_action="waiting_for_otp")
+    return bot_output.phone_numebr_verification(chat_id=chat.chat_id)
 
 
 def otp_verify(text: str, chat: Chat):

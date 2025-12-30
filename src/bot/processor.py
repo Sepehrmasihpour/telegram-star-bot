@@ -11,6 +11,8 @@ from src.bot.chat_flow import (
     otp_verify,
     buy_product_version,
     buy_product,
+    edit_phone_number,
+    send_otp,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -126,6 +128,13 @@ def process_callback_query(
                 if last_message is True
                 else bot_output.common_questions(chat_id, message_id, True)
             )
+
+        if query_data == "edit_phone_number":
+            return edit_phone_number(db=db, chat=chat)
+
+        if query_data == "send_verification_code":
+            return send_otp(db=db, chat=chat)
+
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
             return buy_product(db=db, chat=chat, product_id=int(product_id))
@@ -135,6 +144,7 @@ def process_callback_query(
             return buy_product_version(
                 db=db, chat=chat, product_version_id=int(prodcut_version_id)
             )
+
         else:
             ...
     except Exception as e:

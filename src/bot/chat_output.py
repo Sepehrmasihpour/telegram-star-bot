@@ -155,16 +155,6 @@ class TelegrambotOutputs:
                 """
             ),
             "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📝Edit phone number",
-                            "callback_data": "edit_phone_number",
-                        }
-                    ],
-                ]
-            },
         }
 
     @staticmethod
