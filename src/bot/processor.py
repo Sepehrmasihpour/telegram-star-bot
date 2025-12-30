@@ -3,16 +3,15 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
-from src.crud.products import get_products, get_product_by_id, get_product_version_by_id
-from src.crud.order import create_order_with_items, CreateOrderItemIn
-from src.services.pricing import get_version_price
+from src.crud.products import get_products, get_product_by_id
 from src.bot.chat_flow import (
     chat_first_level_authentication,
-    chat_second_lvl_authentication,
     is_last_message,
     get_product_prices,
     phone_number_input,
     otp_verify,
+    buy_product_version,
+    buy_product,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -130,33 +129,11 @@ def process_callback_query(
             )
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
-            product = get_product_by_id(db=db, id=int(product_id))
-            versions_prices = get_product_prices(db=db, product=product)
-            return bot_output.buy_product(
-                chat_id=chat_id,
-                product=product,
-                versions_prices=versions_prices,
-            )
+            return buy_product(db=db, chat=chat, product_id=int(product_id))
         if query_data.startswith("buy_product_version:"):
-            auth = chat_second_lvl_authentication(db=db, chat=chat)
-            if auth is not True:
-                return auth
             _, prodcut_version_id = query_data.split(":", 1)
-            product_version = get_product_version_by_id(
-                db=db, id=int(prodcut_version_id)
-            )
-            product_version_price = get_version_price(version=product_version, db=db)
-            order = create_order_with_items(
-                db=db,
-                user_id=chat.user_id,
-                items=[CreateOrderItemIn(product_version_id=int(prodcut_version_id))],
-                commit=True,
-            )
-            return bot_output.buy_product_version(
-                chat_id=chat_id,
-                product_version=product_version,
-                price=product_version_price,
-                order_id=order.id,
+            return buy_product_version(
+                db=db, chat=chat, product_version_id=int(prodcut_version_id)
             )
         else:
             ...

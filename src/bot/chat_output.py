@@ -117,14 +117,20 @@ class TelegrambotOutputs:
                 "inline_keyboard": [
                     [
                         {
-                            "text": "📱send verification code to phone number",
+                            "text": "📱 send verification code to phone number",
                             "callback_data": "send_validation_code",
                         }
                     ],
                     [
                         {
-                            "text": "📝Edit phone number",
+                            "text": "📝 Edit phone number",
                             "callback_data": "edit_phone_number",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🔁 return to menu",
+                            "callback_data": "return_to_menu",
                         }
                     ],
                 ]

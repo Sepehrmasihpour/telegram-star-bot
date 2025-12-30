@@ -8,6 +8,8 @@ from src.config import logger
 from src.models import Chat, Product
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
+from src.crud.products import get_product_version_by_id, get_product_by_id
+from src.crud.order import create_order_with_items, CreateOrderItemIn
 from src.crud.user import (
     get_chat_by_chat_id,
     create_chat,
@@ -65,6 +67,38 @@ def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | 
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
         raise
+
+
+def buy_product(db: Session, chat: Chat, product_id: int) -> Dict | None:
+    product = get_product_by_id(db=db, id=product_id)
+    versions_prices = get_product_prices(db=db, product=product)
+    return bot_output.buy_product(
+        chat_id=chat.chat_id,
+        product=product,
+        versions_prices=versions_prices,
+    )
+
+
+def buy_product_version(
+    db: Session, chat: Chat, product_version_id: int
+) -> Dict | None:
+    auth = chat_second_lvl_authentication(db=db, chat=chat)
+    if auth is not True:
+        return auth
+    product_version = get_product_version_by_id(db=db, id=product_version_id)
+    product_version_price = get_version_price(version=product_version, db=db)
+    order = create_order_with_items(
+        db=db,
+        user_id=chat.user_id,
+        items=[CreateOrderItemIn(product_version_id=int(product_version_id))],
+        commit=True,
+    )
+    return bot_output.buy_product_version(
+        chat_id=chat.chat_id,
+        product_version=product_version,
+        price=product_version_price,
+        order_id=order.id,
+    )
 
 
 def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
