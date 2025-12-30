@@ -3,11 +3,10 @@ from sqlalchemy.orm import Session
 from src.config import logger
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
-from src.crud.products import get_products, get_product_by_id
+from src.crud.products import get_products
 from src.bot.chat_flow import (
     chat_first_level_authentication,
     is_last_message,
-    get_product_prices,
     phone_number_input,
     otp_verify,
     buy_product_version,
@@ -130,6 +129,7 @@ def process_callback_query(
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
             return buy_product(db=db, chat=chat, product_id=int(product_id))
+
         if query_data.startswith("buy_product_version:"):
             _, prodcut_version_id = query_data.split(":", 1)
             return buy_product_version(
