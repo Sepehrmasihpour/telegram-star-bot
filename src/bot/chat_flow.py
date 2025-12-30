@@ -53,9 +53,14 @@ def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | 
             if not user.phone_number:
                 update_chat(db, chat.id, pending_action="waiting_for_phone_number")
                 return bot_output.phone_number_input(chat.chat_id)
-            return bot_output.phone_number_verfication_needed(
-                chat.chat_id, phone_number=user.phone_number
+            if not user.phone_number_validated:
+                return bot_output.phone_number_verfication_needed(
+                    chat.chat_id, phone_number=user.phone_number
+                )
+            return bot_output.chat_verification_needed(
+                chat_id=chat.chat_id, phone_number=user.phone_number
             )
+
         return True
     except Exception as e:
         logger.error(f"chat_second_level_authentication failed: {e}")
@@ -74,12 +79,12 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
     user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
     if user_with_the_same_phone:
         chat_data = update_chat(
-            db=db,
+            db=Session,
             chat_id_pk=chat_data.id,
             user_id=user_with_the_same_phone.id,
             pending_action=None,
         )
-        return chat_second_lvl_authentication(db=db, chat=chat_data)
+        return chat_second_lvl_authentication(db=Session, chat=chat_data)
 
     update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
     chat_data = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)

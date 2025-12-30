@@ -103,6 +103,36 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
+    def chat_verification_needed(chat_id: Union[str, int], phone_number: str):
+        return {
+            "chat_id": chat_id,
+            "text": _t(
+                f"""
+                we need to make sure that this chat belongs to the user with this phone
+                number {phone_number} 
+                    
+                """
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "📱send verification code to phone number",
+                            "callback_data": "send_validation_code",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "📝Edit phone number",
+                            "callback_data": "edit_phone_number",
+                        }
+                    ],
+                ]
+            },
+            "parse_mode": "Markdown",
+        }
+
+    @staticmethod
     def phone_numebr_verification(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
