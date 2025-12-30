@@ -132,7 +132,7 @@ def process_callback_query(
         if query_data == "edit_phone_number":
             return edit_phone_number(db=db, chat=chat)
 
-        if query_data == "send_verification_code":
+        if query_data == "send_validation_code":
             return send_otp(db=db, chat=chat)
 
         if query_data.startswith("buy_product:"):
