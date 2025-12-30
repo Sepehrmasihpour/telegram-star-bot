@@ -74,6 +74,12 @@ class TelegrambotOutputs:
                             "callback_data": "edit_phone_number",
                         }
                     ],
+                    [
+                        {
+                            "text": "🔁 return to menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
                 ]
             },
         }
