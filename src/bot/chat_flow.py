@@ -117,7 +117,7 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         attempts = chat_data.phone_input_attempt
         if attempts >= 2:
             update_chat(db, chat_data.id, phone_input_attempt=0, pending_action=None)
-            return bot_output.phone_max_attempt(chat_data.chat_id)
+            return bot_output.max_attempt_reached(chat_data.chat_id)
         update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
         return bot_output.invalid_phone_number(chat_data.chat_id)
     user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
@@ -141,9 +141,15 @@ def send_otp(db: Session, chat: Chat):
     return bot_output.phone_numebr_verification(chat_id=chat.chat_id)
 
 
-def otp_verify(text: str, chat: Chat):
-    #!This is very much a place holder for later
-    if text != "1111":
+def otp_verify(db: Session, text: str, chat: Chat):
+    if text != "1111":  #!This is very much a place holder for later
+        attemps = chat.otp_input_attempt
+        if attemps >= 2:
+            update_chat(
+                db=db, chat_id_pk=chat.id, otp_input_attempt=0, pending_action=None
+            )
+            return bot_output.max_attempt_reached(chat_id=chat.chat_id)
+        update_chat(db=db, chat_id_pk=chat.id, otp_input_attempt=attemps + 1)
         return bot_output.invalid_otp(chat.chat_id)
     return bot_output.phone_number_verified(chat.chat_id)
 

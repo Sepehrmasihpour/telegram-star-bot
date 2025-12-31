@@ -93,7 +93,7 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
-    def phone_max_attempt(chat_id: Union[str, int]):
+    def max_attempt_reached(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,
             "text": "❌ *failed 3 times. canceled*",
@@ -105,6 +105,14 @@ class TelegrambotOutputs:
         return {
             "chat_id": chat_id,
             "text": "❌ *phone number is invalid*",
+            "parse_mode": "Markdown",
+        }
+
+    @staticmethod
+    def invalid_otp(chat_id: Union[str, int]):
+        return {
+            "chat_id": chat_id,
+            "text": "❌ *validation code is invalid*",
             "parse_mode": "Markdown",
         }
 
@@ -160,14 +168,6 @@ class TelegrambotOutputs:
                 .if the account belongs to someone else, please use another account
                 """
             ),
-            "parse_mode": "Markdown",
-        }
-
-    @staticmethod
-    def invalid_otp(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": "❌ *invalid verification code*",
             "parse_mode": "Markdown",
         }
 
