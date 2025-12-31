@@ -140,7 +140,7 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
         if user_with_the_same_phone:
             chat_data = update_chat(
-                db=Session,
+                db=db,
                 chat_id_pk=chat_data.id,
                 user_id=user_with_the_same_phone.id,
                 pending_action=None,
