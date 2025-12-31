@@ -39,6 +39,7 @@ class Chat(Base):
     )
     pending_action: Mapped[str | None] = mapped_column(String, nullable=True)
     phone_input_attempt: Mapped[int] = mapped_column(Integer, server_default="0")
+    otp_input_attempt: Mapped[int] = mapped_column(Integer, server_default="0")
     last_message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     user: Mapped["User"] = relationship(back_populates="chats")
 

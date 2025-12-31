@@ -86,7 +86,7 @@ def edit_phone_number(db: Session, chat: Chat):
         chat_verified=False,
         pending_action="waiting_for_phone_number",
     )
-    return bot_output.phone_number_input
+    return bot_output.phone_number_input(chat_id=chat.chat_id)
 
 
 def buy_product_version(
