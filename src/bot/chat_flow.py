@@ -169,7 +169,7 @@ def send_otp(db: Session, chat: Chat):
 def otp_verify(db: Session, text: str, chat: Chat):
     try:
 
-        if text != "1111":  #!This is very much a place holder for later
+        if not text == "1111":  #!This is very much a place holder for later
             attemps = chat.otp_input_attempt
             if attemps >= 2:
                 update_chat(
