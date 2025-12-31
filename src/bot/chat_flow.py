@@ -178,6 +178,14 @@ def otp_verify(db: Session, text: str, chat: Chat):
                 return bot_output.max_attempt_reached(chat_id=chat.chat_id)
             update_chat(db=db, chat_id_pk=chat.id, otp_input_attempt=attemps + 1)
             return bot_output.invalid_otp(chat.chat_id)
+        update_chat(
+            db=db,
+            chat_id_pk=chat.id,
+            pending_action=None,
+            otp_input_attempt=0,
+            chat_verified=True,
+        )
+        update_user(db=db, user_id=chat.user_id, phone_number_validated=True)
         return bot_output.phone_number_verified(chat.chat_id)
     except Exception as e:
         logger.error(f"otp_verify at chat flow failed: {e}")
