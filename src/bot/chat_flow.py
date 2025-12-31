@@ -185,7 +185,6 @@ def otp_verify(db: Session, text: str, chat: Chat):
             otp_input_attempt=0,
             chat_verified=True,
         )
-        logger.info("OTP correct. chat.id=%s chat.user_id=%s", chat.id, chat.user_id)
         update_user(db=db, user_id=chat.user_id, phone_number_validated=True)
         return bot_output.phone_number_verified(chat.chat_id)
     except Exception as e:

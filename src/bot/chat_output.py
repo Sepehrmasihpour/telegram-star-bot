@@ -174,17 +174,14 @@ class TelegrambotOutputs:
     @staticmethod
     def phone_number_verified(chat_id: Union[str, int]):
         return {
-            "method": "verifiedPhone",
-            "params": {
-                "chat_id": chat_id,
-                "text": _t(
-                    """
+            "chat_id": chat_id,
+            "text": _t(
+                """
                     ✅ **Phone number successfully verified!**
                     🌟Showing the products...
                     """
-                ),
-                "parse_mode": "Markdown",
-            },
+            ),
+            "parse_mode": "Markdown",
         }
 
     @staticmethod
