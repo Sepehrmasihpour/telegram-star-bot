@@ -70,65 +70,85 @@ def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | 
 
 
 def buy_product(db: Session, chat: Chat, product_id: int) -> Dict | None:
-    product = get_product_by_id(db=db, id=product_id)
-    versions_prices = get_product_prices(db=db, product=product)
-    return bot_output.buy_product(
-        chat_id=chat.chat_id,
-        product=product,
-        versions_prices=versions_prices,
-    )
+    try:
+
+        product = get_product_by_id(db=db, id=product_id)
+        versions_prices = get_product_prices(db=db, product=product)
+        return bot_output.buy_product(
+            chat_id=chat.chat_id,
+            product=product,
+            versions_prices=versions_prices,
+        )
+    except Exception as e:
+        logger.error(f"but_product at chat flow failed:{e}")
+        raise
 
 
 def edit_phone_number(db: Session, chat: Chat):
-    update_chat(
-        db=db,
-        chat_id_pk=chat.id,
-        chat_verified=False,
-        pending_action="waiting_for_phone_number",
-    )
-    return bot_output.phone_number_input(chat_id=chat.chat_id)
+    try:
+
+        update_chat(
+            db=db,
+            chat_id_pk=chat.id,
+            chat_verified=False,
+            pending_action="waiting_for_phone_number",
+        )
+        return bot_output.phone_number_input(chat_id=chat.chat_id)
+    except Exception as e:
+        logger.error(f"edit_phone_number at chat flow failed:{e}")
+        raise
 
 
 def buy_product_version(
     db: Session, chat: Chat, product_version_id: int
 ) -> Dict | None:
-    auth = chat_second_lvl_authentication(db=db, chat=chat)
-    if auth is not True:
-        return auth
-    product_version = get_product_version_by_id(db=db, id=product_version_id)
-    product_version_price = get_version_price(version=product_version, db=db)
-    order = create_order_with_items(
-        db=db,
-        user_id=chat.user_id,
-        items=[CreateOrderItemIn(product_version_id=int(product_version_id))],
-        commit=True,
-    )
-    return bot_output.buy_product_version(
-        chat_id=chat.chat_id,
-        product_version=product_version,
-        price=product_version_price,
-        order_id=order.id,
-    )
+    try:
+        auth = chat_second_lvl_authentication(db=db, chat=chat)
+        if auth is not True:
+            return auth
+        product_version = get_product_version_by_id(db=db, id=product_version_id)
+        product_version_price = get_version_price(version=product_version, db=db)
+        order = create_order_with_items(
+            db=db,
+            user_id=chat.user_id,
+            items=[CreateOrderItemIn(product_version_id=int(product_version_id))],
+            commit=True,
+        )
+        return bot_output.buy_product_version(
+            chat_id=chat.chat_id,
+            product_version=product_version,
+            price=product_version_price,
+            order_id=order.id,
+        )
+    except Exception as e:
+        logger.error(f"buy_product_version at chat flow failed:{e}")
+        raise
 
 
 def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
-    valid_phone_number = phone_number_authenticator(phone_number)
-    if not valid_phone_number:
-        attempts = chat_data.phone_input_attempt
-        if attempts >= 2:
-            update_chat(db, chat_data.id, phone_input_attempt=0, pending_action=None)
-            return bot_output.max_attempt_reached(chat_data.chat_id)
-        update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
-        return bot_output.invalid_phone_number(chat_data.chat_id)
-    user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
-    if user_with_the_same_phone:
-        chat_data = update_chat(
-            db=Session,
-            chat_id_pk=chat_data.id,
-            user_id=user_with_the_same_phone.id,
-            pending_action=None,
-        )
-        return chat_second_lvl_authentication(db=Session, chat=chat_data)
+    try:
+        valid_phone_number = phone_number_authenticator(phone_number)
+        if not valid_phone_number:
+            attempts = chat_data.phone_input_attempt
+            if attempts >= 2:
+                update_chat(
+                    db, chat_data.id, phone_input_attempt=0, pending_action=None
+                )
+                return bot_output.max_attempt_reached(chat_data.chat_id)
+            update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
+            return bot_output.invalid_phone_number(chat_data.chat_id)
+        user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
+        if user_with_the_same_phone:
+            chat_data = update_chat(
+                db=Session,
+                chat_id_pk=chat_data.id,
+                user_id=user_with_the_same_phone.id,
+                pending_action=None,
+            )
+            return chat_second_lvl_authentication(db=Session, chat=chat_data)
+    except Exception as e:
+        logger.error(f"phone_number_input failed at chat flow:{e}")
+        raise
 
     update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
     chat_data = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
@@ -136,22 +156,32 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
 
 
 def send_otp(db: Session, chat: Chat):
-    #! this is a placeholder for when we actually send the otp
-    update_chat(db=db, chat_id_pk=chat.id, pending_action="waiting_for_otp")
-    return bot_output.phone_numebr_verification(chat_id=chat.chat_id)
+    try:
+
+        #! this is a placeholder for when we actually send the otp
+        update_chat(db=db, chat_id_pk=chat.id, pending_action="waiting_for_otp")
+        return bot_output.phone_numebr_verification(chat_id=chat.chat_id)
+    except Exception as e:
+        logger.error(f"send_otp at chat flow failed:{e}")
+        raise
 
 
 def otp_verify(db: Session, text: str, chat: Chat):
-    if text != "1111":  #!This is very much a place holder for later
-        attemps = chat.otp_input_attempt
-        if attemps >= 2:
-            update_chat(
-                db=db, chat_id_pk=chat.id, otp_input_attempt=0, pending_action=None
-            )
-            return bot_output.max_attempt_reached(chat_id=chat.chat_id)
-        update_chat(db=db, chat_id_pk=chat.id, otp_input_attempt=attemps + 1)
-        return bot_output.invalid_otp(chat.chat_id)
-    return bot_output.phone_number_verified(chat.chat_id)
+    try:
+
+        if text != "1111":  #!This is very much a place holder for later
+            attemps = chat.otp_input_attempt
+            if attemps >= 2:
+                update_chat(
+                    db=db, chat_id_pk=chat.id, otp_input_attempt=0, pending_action=None
+                )
+                return bot_output.max_attempt_reached(chat_id=chat.chat_id)
+            update_chat(db=db, chat_id_pk=chat.id, otp_input_attempt=attemps + 1)
+            return bot_output.invalid_otp(chat.chat_id)
+        return bot_output.phone_number_verified(chat.chat_id)
+    except Exception as e:
+        logger.error(f"otp_verify at chat flow failed: {e}")
+        raise
 
 
 def is_last_message(
