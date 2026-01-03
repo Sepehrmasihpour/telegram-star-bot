@@ -153,6 +153,63 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
+    def login_to_acount(chat_id: Union[str, int], phone_number: str):
+        return {
+            "chat_id": chat_id,
+            "text": _t(
+                """
+                ⚠️ ** Theres a user with this phone number ** 
+                do you want to login to this acount or edit your phone number
+                """
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "🚪Login",
+                            "callback_data": f"login_to_acount:{phone_number}",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "📝 Edit phone number",
+                            "callback_data": "edit_phone_number",
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🔁 return to menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
+    def already_logged_in(chat_id: Union[str, int], phone_number: str):
+        return {
+            "chat_id": chat_id,
+            "text": _t(
+                f"""
+                ❌ ** you are already logged in ** 
+                you are currently logged in into the acount with the phone number
+                of ({phone_number})
+                """
+            ),
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "🔁 return to menu",
+                            "callback_data": "return_to_menu",
+                        }
+                    ],
+                ]
+            },
+        }
+
+    @staticmethod
     def phone_numebr_verification(chat_id: Union[str, int]):
         return {
             "chat_id": chat_id,

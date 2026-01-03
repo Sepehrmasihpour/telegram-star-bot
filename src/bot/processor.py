@@ -13,6 +13,7 @@ from src.bot.chat_flow import (
     buy_product,
     edit_phone_number,
     send_otp,
+    login,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -144,6 +145,9 @@ def process_callback_query(
             return buy_product_version(
                 db=db, chat=chat, product_version_id=int(prodcut_version_id)
             )
+        if query_data.startswith("login_to_acount:"):
+            _, phone_number = query_data.split(":", 1)
+            return login(db=db, chat=chat, phone_number=phone_number)
 
         else:
             ...

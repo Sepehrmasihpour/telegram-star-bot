@@ -139,20 +139,35 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
             return bot_output.invalid_phone_number(chat_data.chat_id)
         user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
         if user_with_the_same_phone:
-            chat_data = update_chat(
-                db=db,
-                chat_id_pk=chat_data.id,
-                user_id=user_with_the_same_phone.id,
-                pending_action=None,
+            update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
+            return bot_output.login_to_acount(
+                chat_id=chat_data.chat_id, phone_number=phone_number
             )
-            return chat_second_lvl_authentication(db=Session, chat=chat_data)
+        updated_chat = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
+        update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
+        return chat_second_lvl_authentication(db=db, chat=updated_chat)
+
     except Exception as e:
         logger.error(f"phone_number_input failed at chat flow:{e}")
         raise
 
-    update_user(db=db, user_id=chat_data.user_id, phone_number=phone_number)
-    chat_data = update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
-    return chat_second_lvl_authentication(db=db, chat=chat_data)
+
+def login(db: Session, chat: Chat, phone_number: str):
+    try:
+
+        user_to_login_to = get_user_by_phone(db=db, phone_number=phone_number)
+        if chat.user.id == user_to_login_to.id:
+            return bot_output.already_logged_in(
+                chat_id=chat.chat_id, phone_number=phone_number
+            )
+
+        updated_chat = update_chat(
+            db=db, chat_id_pk=chat.id, user_id=user_to_login_to.id, chat_verified=False
+        )
+        return chat_second_lvl_authentication(db=db, chat=updated_chat)
+    except Exception as e:
+        logger.error(f"login at chat_flow failed:{e}")
+        raise
 
 
 def send_otp(db: Session, chat: Chat):
