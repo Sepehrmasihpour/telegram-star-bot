@@ -138,7 +138,10 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
             update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
             return bot_output.invalid_phone_number(chat_data.chat_id)
         user_with_the_same_phone = get_user_by_phone(db, phone_number=phone_number)
-        if user_with_the_same_phone:
+        if (
+            user_with_the_same_phone
+            and chat_data.user_id != user_with_the_same_phone.id
+        ):
             update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
             return bot_output.login_to_acount(
                 chat_id=chat_data.chat_id, phone_number=phone_number
