@@ -217,20 +217,20 @@ def update_order(db: Session, order_id: Union[str, int], **fields: Any) -> Order
         order = db.get(Order, int(order_id))
 
         if order is None:
-            logger.info("update_chat_by_chat_id: no chat with chat_id=%s", chat_id)
+            logger.info("update_chat_by_chat_id: no chat with chat_id=%s", order_id)
             return None
 
         for key, value in fields.items():
-            if hasattr(chat, key):
-                setattr(chat, key, value)
+            if hasattr(order, key):
+                setattr(order, key, value)
             else:
-                raise AttributeError(f"Chat has no attribute '{key}'")
+                raise AttributeError(f"order has no attribute '{key}'")
 
         db.commit()
-        db.refresh(chat)
-        return chat
+        db.refresh(order)
+        return order
 
     except SQLAlchemyError as e:
         db.rollback()
-        logger.error("failed to update chat by chat_id: %s", e)
+        logger.error("failed to update order by order_id: %s", e)
         raise

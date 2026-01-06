@@ -210,7 +210,8 @@ async def payment_page(order_id: int):
 @router.post("/confirm-payment")
 async def confirm_payment(order_id: int = Form(...), db: Session = Depends(get_db)):
     order = update_order(db=db, order_id=order_id, status="paid")
-    print(f"Order {order_id} marked as PAID")
+    if order.status == "paid":
+        print(f"Order {order_id} marked as PAID")
 
     # 2. Notify your bot here (Telegram API, webhook, etc.)
     # send_message(chat_id, "Payment successful!")

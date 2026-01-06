@@ -268,6 +268,8 @@ def get_prices(
 
 
 def payment_gateway(db: Session, chat: Chat, order_id: Union[int, str]): ...
+
+
 def cancel_order(db: Session, chat: Chat, order_id: Union[int, str]):
     delete_order(db=db, order_id=order_id)
     return bot_output.return_to_menu(chat_id=chat.chat_id)
