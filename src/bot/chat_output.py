@@ -372,7 +372,7 @@ class TelegrambotOutputs:
                 }
             ],
             [{"text": "₿ crypto", "callback_data": f"crypto_payment:{order_id}"}],
-            [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}],
+            [{"text": "❌ cancel order", "callback_data": f"cancel_order:{order_id}"}],
         ]
         return {
             "chat_id": chat_id,

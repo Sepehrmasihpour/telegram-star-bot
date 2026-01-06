@@ -14,6 +14,9 @@ from src.bot.chat_flow import (
     edit_phone_number,
     send_otp,
     login,
+    cancel_order,
+    crypto_payment,
+    payment_gateway,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -61,8 +64,10 @@ def process_callback_query(
     try:
         chat = get_chat_by_chat_id(db, chat_id)
         last_message = is_last_message(message_id=message_id, db=db, chat=chat)
+
         if chat.pending_action is not None:
             return bot_output.empty_answer_callback(query_id)
+
         if query_data == "show_terms_for_acceptance":
             if chat.accepted_terms is True:
                 return bot_output.empty_answer_callback(query_id)
@@ -148,6 +153,18 @@ def process_callback_query(
         if query_data.startswith("login_to_acount:"):
             _, phone_number = query_data.split(":", 1)
             return login(db=db, chat=chat, phone_number=phone_number)
+
+        if query_data.startswith("payment_gateway:"):
+            _, order_id = query_data.split(":", 1)
+            return payment_gateway(db=db, chat=chat, order_id=order_id)
+
+        if query_data.startswith("crypto_payment:"):
+            _, order_id = query_data.split(":", 1)
+            return crypto_payment(db=db, chat=chat, order_id=order_id)
+
+        if query_data.startswith("cancel_order:"):
+            _, order_id = query_data.split(":", 1)
+            return cancel_order(db=db, chat=chat, order_id=order_id)
 
         else:
             ...

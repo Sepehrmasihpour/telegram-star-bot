@@ -6,9 +6,9 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Form
 from fastapi.requests import Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.routing import APIRouter
 
 from src.config import settings, logger
@@ -17,6 +17,7 @@ from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_
 from src.bot.webhook import set_webhook, delete_webhook
 from src.bot.dispathcer import dispatch_response
 from src.db.seed import seed_initial_products
+from src.crud.order import update_order
 
 from sqlalchemy.orm import Session
 from src.db import get_db, SessionLocal
@@ -188,3 +189,36 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.exception("Unhandled error in telegram_webhook: %s", e)
         return {"ok": False, "error": "internal error"}
+
+
+@router.get("/pay", response_class=HTMLResponse)
+async def payment_page(order_id: int):
+    return f"""
+    <html>
+        <body>
+            <h2>Simulated Payment</h2>
+            <p>Order ID: {order_id}</p>
+            <form action="/confirm-payment" method="post">
+                <input type="hidden" name="order_id" value="{order_id}">
+                <button type="submit">Pay</button>
+            </form>
+        </body>
+    </html>
+    """
+
+
+@router.post("/confirm-payment")
+async def confirm_payment(order_id: int = Form(...), db: Session = Depends(get_db)):
+    order = update_order(db=db, order_id=order_id, status="paid")
+    print(f"Order {order_id} marked as PAID")
+
+    # 2. Notify your bot here (Telegram API, webhook, etc.)
+    # send_message(chat_id, "Payment successful!")
+
+    # 3. Redirect to success page
+    return RedirectResponse(url="/success", status_code=303)
+
+
+@router.get("/success", response_class=HTMLResponse)
+async def success():
+    return "<h2>Payment Successful ✅</h2>"

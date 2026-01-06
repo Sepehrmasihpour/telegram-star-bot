@@ -9,7 +9,7 @@ from src.models import Chat, Product
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.crud.products import get_product_version_by_id, get_product_by_id
-from src.crud.order import create_order_with_items, CreateOrderItemIn
+from src.crud.order import create_order_with_items, CreateOrderItemIn, delete_order
 from src.crud.user import (
     get_chat_by_chat_id,
     create_chat,
@@ -265,6 +265,15 @@ def get_prices(
     except Exception as e:
         logger.error(f"chat_flow/get_prices failed:{e}")
         raise
+
+
+def payment_gateway(db: Session, chat: Chat, order_id: Union[int, str]): ...
+def cancel_order(db: Session, chat: Chat, order_id: Union[int, str]):
+    delete_order(db=db, order_id=order_id)
+    return bot_output.return_to_menu(chat_id=chat.chat_id)
+
+
+def crypto_payment(db: Session, chat: Chat, order_id: Union[str, int]): ...
 
 
 def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:

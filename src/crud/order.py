@@ -11,7 +11,7 @@ from sqlalchemy import select
 from src.config import logger
 from src.models.order import Order, OrderItem, OrderStatus
 from src.models.products import ProductVersion
-from typing import Sequence
+from typing import Sequence, Union, Any
 from src.services.pricing import get_version_price
 
 
@@ -192,4 +192,45 @@ def create_order_with_items(
     except (SQLAlchemyError, ValueError) as e:
         db.rollback()
         logger.error("create_order_with_items failed: %s", e)
+        raise
+
+
+def delete_order(db: Session, order_id: Union[str, int]) -> bool:
+    try:
+        order = db.get(Order, int(order_id))
+        if not order:
+            logger.info("delete_order: no order with id=%s", order_id)
+            return False
+
+        db.delete(order)
+        db.commit()
+        return True
+
+    except SQLAlchemyError:
+        db.rollback()
+        logger.exception("failed to delete order by id=%s", order_id)
+        return False
+
+
+def update_order(db: Session, order_id: Union[str, int], **fields: Any) -> Order | None:
+    try:
+        order = db.get(Order, int(order_id))
+
+        if order is None:
+            logger.info("update_chat_by_chat_id: no chat with chat_id=%s", chat_id)
+            return None
+
+        for key, value in fields.items():
+            if hasattr(chat, key):
+                setattr(chat, key, value)
+            else:
+                raise AttributeError(f"Chat has no attribute '{key}'")
+
+        db.commit()
+        db.refresh(chat)
+        return chat
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error("failed to update chat by chat_id: %s", e)
         raise
