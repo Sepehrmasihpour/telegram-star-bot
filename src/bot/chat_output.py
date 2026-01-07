@@ -385,17 +385,17 @@ class TelegrambotOutputs:
     def payment_gateway(
         chat_id: Union[str, int],
         order_id: Union[str, int],
-        order_item: ProductVersion,
+        product_name: ProductVersion,
         amount: Union[Decimal, int, str],
         pay_url: str,
     ):
-        emoji = EMOJI_PAIRINGS.get(order_item.name, "🛒")
+        emoji = EMOJI_PAIRINGS.get(product_name, "🛒")
 
         text = "\n".join(
             [
                 "💻 **Pay via Payment Gateway (Test Gateway)**",
                 "",
-                f"📦 Product: {emoji} {order_item.name}",
+                f"📦 Product: {emoji} {product_name}",
                 f"💰 Amount: {amount}",
                 "",
                 "━━━━━━━━━━━━━━━━━━━━",

@@ -279,11 +279,12 @@ def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
         order_item = order.items[0]
         product_version_id = order_item.product_version_id
         unit_price = order_item.unit_price
-        order_item = get_product_version_by_id(db=db, id=product_version_id)
+        product_version = get_product_version_by_id(db=db, id=product_version_id)
+        product_name = product_version.product.name
         return bot_output.payment_gateway(
             chat_id=chat.chat_id,
             order_id=order.id,
-            order_item=order_item,
+            product_name=product_name,
             amount=unit_price,
             pay_url=f"{settings.base_url}/pay/order/{order_id}",
         )
