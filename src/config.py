@@ -142,5 +142,4 @@ if settings.webhook and "ngrok" in settings.webhook.host.lower():
 def public_base_url() -> str:
     if not settings.webhook:
         raise RuntimeError("WEBHOOK is not set; cannot derive public base URL.")
-    # settings.webhook includes scheme + host (+ optional port)
     return f"{settings.webhook.scheme}://{settings.webhook.host}"
