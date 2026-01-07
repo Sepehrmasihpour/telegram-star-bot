@@ -9,7 +9,6 @@ from src.models import Chat, Product
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.crud.products import get_product_version_by_id, get_product_by_id
-from src.config import public_base_url
 from src.config import settings
 from src.crud.order import (
     create_order_with_items,
