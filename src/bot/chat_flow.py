@@ -1,5 +1,6 @@
 import re
 from typing import Dict, Any, Optional, Union
+from urllib.parse import urlencode
 from decimal import Decimal
 from src.services.pricing import get_version_price
 from sqlalchemy.orm import Session, joinedload
@@ -286,7 +287,7 @@ def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
             order_id=order.id,
             product_name=product_name,
             amount=unit_price,
-            pay_url=f"{settings.base_url}/pay/order/{order_id}",
+            pay_url=f"{settings.base_url}/pay?{urlencode({"order_id":order_id})}",
         )
     except Exception as e:
         logger.error(f"payment_gateway at chat_flow failed:{e}")
