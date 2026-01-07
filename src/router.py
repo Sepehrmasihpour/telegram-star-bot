@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, Depends, Form
+from fastapi import FastAPI, HTTPException, Depends, Form, status
 from fastapi.requests import Request
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.routing import APIRouter
@@ -207,16 +207,13 @@ async def payment_page(order_id: int):
     """
 
 
-@router.post("/confirm-payment")
+@router.post("/confirm-payment", response_class=HTMLResponse)
 async def confirm_payment(order_id: int = Form(...), db: Session = Depends(get_db)):
     order = update_order(db=db, order_id=order_id, status="paid")
-    if order.status == "paid":
-        print(f"Order {order_id} marked as PAID")
+    if order.status != "paid":
+        logger.error(f"order payment failed:{order_id}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-    # 2. Notify your bot here (Telegram API, webhook, etc.)
-    # send_message(chat_id, "Payment successful!")
-
-    # 3. Redirect to success page
     return RedirectResponse(url="/success", status_code=303)
 
 

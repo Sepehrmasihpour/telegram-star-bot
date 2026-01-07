@@ -9,7 +9,13 @@ from src.models import Chat, Product
 from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.crud.products import get_product_version_by_id, get_product_by_id
-from src.crud.order import create_order_with_items, CreateOrderItemIn, delete_order
+from src.config import public_base_url
+from src.crud.order import (
+    create_order_with_items,
+    CreateOrderItemIn,
+    delete_order,
+    get_order,
+)
 from src.crud.user import (
     get_chat_by_chat_id,
     create_chat,
@@ -267,12 +273,35 @@ def get_prices(
         raise
 
 
-def payment_gateway(db: Session, chat: Chat, order_id: Union[int, str]): ...
+def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
+    try:
+        order = get_order(db=db, order_id=order_id)
+        order_item = order.items[0]
+        product_version_id = order_item.product_version_id
+        unit_price = order_item.unit_price
+        order_item = get_product_version_by_id(db=db, id=product_version_id)
+        return bot_output.payment_gateway(
+            chat_id=chat.chat_id,
+            order_id=order.id,
+            order_item=order_item,
+            amount=unit_price,
+            pay_url=f"{public_base_url()}/pay/order/{order_id}",
+        )
+    except Exception as e:
+        logger.error(f"payment_gateway at chat_flow failed:{e}")
+        raise
 
 
 def cancel_order(db: Session, chat: Chat, order_id: Union[int, str]):
     delete_order(db=db, order_id=order_id)
     return bot_output.return_to_menu(chat_id=chat.chat_id)
+
+
+def confirm_payment(db: Session, chat: Chat, order_id: Union[int, str]):
+    order = get_order(db=db, order_id=order_id)
+    if order.status != "paid":
+        return bot_output.payment_confirmed(chat_id=chat.chat_id, order_id=order_id)
+    return bot_output.payment_not_confirmed(chat_id=chat.chat_id, order_id=order_id)
 
 
 def crypto_payment(db: Session, chat: Chat, order_id: Union[str, int]): ...

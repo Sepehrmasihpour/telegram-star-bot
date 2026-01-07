@@ -17,6 +17,7 @@ from src.bot.chat_flow import (
     cancel_order,
     crypto_payment,
     payment_gateway,
+    confirm_payment,
 )
 from src.crud.user import (
     get_chat_by_chat_id,
@@ -165,6 +166,10 @@ def process_callback_query(
         if query_data.startswith("cancel_order:"):
             _, order_id = query_data.split(":", 1)
             return cancel_order(db=db, chat=chat, order_id=order_id)
+
+        if query_data.startswith("confirm_payment:"):
+            _, order_id = query_data.split(":", 1)
+            return confirm_payment(db=db, chat=chat, order_id=order_id)
 
         else:
             ...

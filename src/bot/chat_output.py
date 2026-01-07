@@ -382,6 +382,116 @@ class TelegrambotOutputs:
         }
 
     @staticmethod
+    def payment_gateway(
+        chat_id: Union[str, int],
+        order_id: Union[str, int],
+        order_item: ProductVersion,
+        amount: Union[Decimal, int, str],
+        pay_url: str,
+    ):
+        emoji = EMOJI_PAIRINGS.get(order_item.name, "🛒")
+
+        text = "\n".join(
+            [
+                "💻 **Pay via Payment Gateway (Test Gateway)**",
+                "",
+                f"📦 Product: {emoji} {order_item.name}",
+                f"💰 Amount: {amount}",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+                "",
+                "📝 **Instructions:**",
+                '1️⃣ Tap **"Pay Invoice"**',
+                "2️⃣ Review the invoice details",
+                "3️⃣ Tap **Online Payment** on the invoice page",
+                "4️⃣ You will be redirected to the payment gateway",
+                "5️⃣ Enter your card/bank details",
+                '6️⃣ After a successful payment, tap **"I Paid"** here',
+                "",
+                f"🆔 Invoice ID: `{order_id}`",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+            ]
+        )
+
+        keyboard = [
+            [{"text": "💳 Pay Invoice", "url": pay_url}],
+            [{"text": "✅ I Paid", "callback_data": f"confirm_payment:{order_id}"}],
+            [{"text": "❌ Cancel Order", "callback_data": f"cancel_order:{order_id}"}],
+        ]
+
+        return {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": {"inline_keyboard": keyboard},
+        }
+
+    @staticmethod
+    def payment_confirmed(chat_id: Union[int, str], order_id: Union[int, str]):
+        text = "\n".join(
+            [
+                "✅ **Payment Confirmed**",
+                "",
+                "Thank you. Your payment has been successfully verified.",
+                "Your order is now marked as **PAID** and will be processed.",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+                f"🆔 Order ID: `{order_id}`",
+                "",
+                "If you need anything else, you can return to the main menu.",
+            ]
+        )
+
+        keyboard = [
+            [{"text": "🏠 Return to Menu", "callback_data": "menu"}],
+        ]
+
+        return {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": {"inline_keyboard": keyboard},
+        }
+
+    @staticmethod
+    def payment_not_confirmed(chat_id: Union[int, str], order_id: Union[int, str]):
+        text = "\n".join(
+            [
+                "⏳ **Payment Not Found**",
+                "",
+                "We could not verify any successful payment for this order yet.",
+                "This may happen if:",
+                "• The payment is still being processed",
+                "• The payment failed or was canceled",
+                "• You have not completed the payment",
+                "",
+                "━━━━━━━━━━━━━━━━━━━━",
+                f"🆔 Order ID: `{order_id}`",
+                "",
+                'Please complete the payment and then press **"I Paid"** again.',
+            ]
+        )
+
+        keyboard = [
+            [
+                {
+                    "text": "💳 Try Payment Again",
+                    "callback_data": f"payment_gateway:{order_id}",
+                }
+            ],
+            [{"text": "❌ Cancel Order", "callback_data": f"cancel_order:{order_id}"}],
+            [{"text": "🏠 Return to Menu", "callback_data": "menu"}],
+        ]
+
+        return {
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": {"inline_keyboard": keyboard},
+        }
+
+    @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
         return {
             "method": "answerCallback",

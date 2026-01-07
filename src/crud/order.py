@@ -234,3 +234,13 @@ def update_order(db: Session, order_id: Union[str, int], **fields: Any) -> Order
         db.rollback()
         logger.error("failed to update order by order_id: %s", e)
         raise
+
+
+def get_order(db: Session, order_id: Union[str, int]):
+    try:
+        order = db.get(Order, int(order_id))
+        return order
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"failed to fetch the order:{e}")
+        raise
