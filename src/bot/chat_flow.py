@@ -10,6 +10,7 @@ from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.crud.products import get_product_version_by_id, get_product_by_id
 from src.config import public_base_url
+from src.config import settings
 from src.crud.order import (
     create_order_with_items,
     CreateOrderItemIn,
@@ -285,7 +286,7 @@ def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
             order_id=order.id,
             order_item=order_item,
             amount=unit_price,
-            pay_url=f"{public_base_url()}/pay/order/{order_id}",
+            pay_url=f"{settings.base_url}/pay/order/{order_id}",
         )
     except Exception as e:
         logger.error(f"payment_gateway at chat_flow failed:{e}")

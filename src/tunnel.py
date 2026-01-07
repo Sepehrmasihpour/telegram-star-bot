@@ -31,6 +31,7 @@ def start_ngrok_tunnel() -> str | None:
             public_url = public_url.replace("http://", "https://")
 
         logger.info(f"✅ Ngrok tunnel started: {public_url}")
+        settings.base_url = public_url
         return public_url
 
     except PyngrokError as err:

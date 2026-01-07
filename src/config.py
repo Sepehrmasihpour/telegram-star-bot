@@ -71,6 +71,8 @@ class Settings(BaseSettings):
 
     debug: bool = False
 
+    base_url: str = ""  #! this is for testing later this should be better
+
     class Config:
         extra = "allow"
         env_file = os.environ.get("env_file", os.environ.get("ENV_FILE", ".env"))
@@ -137,9 +139,3 @@ if not settings.secret_token:
 
 if settings.webhook and "ngrok" in settings.webhook.host.lower():
     logger.info("Using ngrok; no custom certificate needed.")
-
-
-def public_base_url() -> str:
-    if not settings.webhook:
-        raise RuntimeError("WEBHOOK is not set; cannot derive public base URL.")
-    return f"{settings.webhook.scheme}://{settings.webhook.host}"
