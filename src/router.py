@@ -215,6 +215,7 @@ async def confirm_payment(order_id: int = Form(...), db: Session = Depends(get_d
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
     if order.status == "paid":
         logger.info(f"order payment succeded:{order_id}")
+        return {"ok": True}
     return RedirectResponse(url="/success", status_code=303)
 
 

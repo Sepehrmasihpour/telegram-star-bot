@@ -4,6 +4,9 @@ from textwrap import dedent
 from typing import Optional
 from decimal import Decimal
 from typing import Any
+from sqlalchemy.orm import Session
+from datetime import timedelta, datetime
+from src.crud.chat_outpus import get_chat_output_by_name
 
 
 def _t(s: str) -> str:
@@ -15,12 +18,61 @@ EMOJI_PAIRINGS = {"Premium Stars Pack": "ðŸŒŸ", "Telegram Premium Upgrade": "ðŸ’
 
 
 class TelegrambotOutputs:
+    def __init__(self, minutes_to_update: Optional[datetime] = 5):
+        # minutes left to update
+        self.minutes_to_update = minutes_to_update
+        self.unsupported_command_update_expiry = False
+        self.phone_number_input_update_expiry = False
+        self.phone_number_verfication_needed_update_expiry = False
+        self.authentication_failed_update_expiry = False
+        self.max_attempt_reached_update_expiry = False
+        self.invalid_phone_number_update_expiry = False
+        self.invalid_otp_update_expiry = False
+        self.chat_verification_needed_update_expiry = False
+        self.login_to_acount_update_expiry = False
+        self.already_logged_in_update_expiry = False
+        self.phone_numebr_verification_update_expiry = False
+        self.phone_number_verified_update_expiry = False
+        self.loading_prices_update_expiry = False
+        self.get_prices_update_expiry = False
+        self.buy_product_update_expiry = False
+        self.buy_product_version_update_expiry = False
+        self.payment_gateway_update_expiry = False
+        self.payment_confirmed_update_expiry = False
+        self.payment_not_confirmed_update_expiry = False
+        self.empty_answer_callback_update_expiry = False
+        self.show_terms_condititons_update_expiry = False
+        self.terms_and_conditions_update_expiry = False
+        self.return_to_menu_update_expiry = False
+        self.support_update_expiry = False
+        self.contact_support_info_update_expiry = False
+        self.common_questions_update_expiry = False
 
-    @staticmethod
-    def unsupported_command(chat_id: Union[str, int]):
+        # outputs chche texts
+        self.unsupported_command.text = None
+
+    def _needs_update(self, update_expiry: datetime):
+        if update_expiry is False:
+            return True
+        current_time = datetime.now()
+        if not update_expiry - current_time > 0:
+            return True
+        return False
+
+    def unsupported_command(self, db: Session, chat_id: Union[str, int]):
+        if (
+            self._needs_update(update_expiry=self.unsupported_command_update_expiry)
+            is True
+        ):
+            chat_output = get_chat_output_by_name(db=db, name="unsupported_command")
+            self.unsupported_command_text = chat_output.text
+            self.unsupported_command_update_expiry = datetime.now + timedelta(
+                minutes=self.minutes_to_update
+            )
+
         return {
             "chat_id": chat_id,
-            "text": "command not supported",
+            "text": self.unsupported_command_text,
         }
 
     @staticmethod
