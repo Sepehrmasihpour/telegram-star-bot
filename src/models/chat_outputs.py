@@ -1,5 +1,5 @@
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import String, UniqueConstraint, ForeignKey, Enum as SAEnum
+from sqlalchemy import Integer, String, UniqueConstraint, ForeignKey, Enum as SAEnum
 from src.db.base import Base
 from enum import Enum
 
@@ -14,6 +14,7 @@ class ChatOutput(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(5, 70), nullable=False, unique=True)
     text: Mapped[str] = mapped_column(String(5, 5000), nullable=False)
+    button_count: Mapped[int] = mapped_column(Integer, server_default="0", default=0)
     placehoders: Mapped[list["Placeholder"]] = relationship(
         back_populates="chat_output", cascade="all,delete-orphan"
     )
@@ -41,6 +42,7 @@ class Button(Base):
     chat_output_id: Mapped[int] = mapped_column(
         ForeignKey("chat_outputs.id", ondelete="CASCADE")
     )
+    number: Mapped[int] = mapped_column(Integer, nullable=False)
     name: Mapped[str] = mapped_column(String(5, 100), nullable=False)
     text: Mapped[str] = mapped_column(String(1, 600), nullable=False)
     chat_output: Mapped["ChatOutput"] = relationship(back_populates="buttons")

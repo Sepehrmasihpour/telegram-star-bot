@@ -55,11 +55,13 @@ class TelegrambotOutputs:
         self.contact_support_info_update_expiry = None
         self.common_questions_update_expiry = None
 
-        # outputs chche texts
-        self.unsupported_command.text = None
+        # outputs chche data
+        self.unsupported_command_data = None
+        self.phone_number_input_data = None
+        self.phone_number_verification_needed_data = None
 
-    def _needs_update(self, update_expiry: datetime | None):
-        if not update_expiry:
+    def _needs_update(self, update_expiry: datetime | None, data: Dict | None):
+        if not update_expiry or not data:
             return True
         current_time = datetime.now()
         if not update_expiry - current_time > 0:
@@ -68,49 +70,60 @@ class TelegrambotOutputs:
 
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
         if (
-            self._needs_update(update_expiry=self.unsupported_command_update_expiry)
+            self._needs_update(
+                update_expiry=self.unsupported_command_update_expiry,
+                data=self.unsupported_command_data,
+            )
             is True
         ):
             chat_output = get_chat_output_by_name(db=db, name="unsupported_command")
-            self.unsupported_command_text = chat_output.text
+            self.unsupported_command_data = {
+                "chat_id": chat_id,
+                "text": _t(_fill_placeholdres(chat_output.text)),
+            }
             self.unsupported_command_update_expiry = datetime.now + timedelta(
                 minutes=self.minutes_to_update
             )
 
-        return {
-            "chat_id": chat_id,
-            "text": _t(_fill_placeholdres(self.unsupported_command_text)),
-        }
+        return self.unsupported_command_data
 
-    @staticmethod
-    def phone_number_input(chat_id: Union[str, int]):
+    def phone_number_input(self, db: Session, chat_id: Union[str, int]):
+        if (
+            self._needs_update(
+                update_expiry=self.phone_number_input_update_expiry,
+                data=self.unsupported_command_data,
+            )
+            is True
+        ):
+            chat_output = get_chat_output_by_name(db=db, name="phone_number_input")
+            self.phone_number_input_data = {
+                "chat_id": chat_id,
+                "text": _t(_fill_placeholdres(chat_output.text)),
+                "parse_mode": "Markdown",
+            }
+            self.phone_number_input_update_expiry = datetime.now + timedelta(
+                minutes=self.minutes_to_update
+            )
 
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                🌟 **Welcome to the testing bot!**
+        return self.phone_number_input_data
 
-                📱 **To start, please enter your phone number:**
-                .enter the phone number in the 09123456789 format
-                .the phone number must belong to you
-                .this phone number is used for verifying your identity and direct payment
-
-                💡 **Keep note:**
-                .your phone number will remain safe and secret
-                .it will only be used for verifying your identity and payment
-                .you can change it at any time
-
-                🔐 **Security:**
-                .all your information is stored using encryption
-                .no data will be shared with a third party
-                """
-            ),
-            "parse_mode": "Markdown",
-        }
-
-    @staticmethod
-    def phone_number_verfication_needed(chat_id: Union[str, int], phone_number: str):
+    def phone_number_verification_needed(
+        self, chat_id: Union[str, int], db: Session, phone_number: str
+    ):
+        if (
+            self._needs_update(
+                update_expiry=self.phone_number_verfication_needed_update_expiry,
+                data=self.phone_number_verification_needed_data,
+            )
+            is True
+        ):
+            chat_output = get_chat_output_by_name(
+                db=db, name="phone_number_verification_needed"
+            )
+            self.phone_number_verification_needed_data = {
+                "chat_id": chat_id,
+                "text": _t(_fill_placeholdres(chat_output.text)),
+            }
         return {
             "chat_id": chat_id,
             "text": _t(

@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from typing import Sequence
 
-from src.models import ChatOutoput
+from src.models import ChatOutput
 from src.config import logger
 
 from dataclasses import dataclass
@@ -21,6 +21,7 @@ class CreateButtonItem:
     chat_output_id: int
     name: str
     text: str
+    number: int
 
 
 # TODO
@@ -42,9 +43,9 @@ def create_chat_output_instance_with_placeholder_and_button(
         raise
 
 
-def get_chat_output_by_name(db: Session, name: str) -> ChatOutoput | None:
+def get_chat_output_by_name(db: Session, name: str) -> ChatOutput | None:
     try:
-        return db.query(ChatOutoput).filter(ChatOutoput.name == name).first()
+        return db.query(ChatOutput).filter(ChatOutput.name == name).first()
     except SQLAlchemyError:
         logger.exception("failed to fetch chat_output by phone_number=%s", name)
         raise

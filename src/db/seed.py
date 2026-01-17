@@ -1,6 +1,6 @@
 # src/db/seed.py
 from sqlalchemy.orm import Session
-from src.models import Product, ProductVersion, ChatOutoput, Placeholder, Button
+from src.models import Product, ProductVersion, ChatOutput, Placeholder, Button
 from src.config import logger
 from src.crud.chat_outpus import create_chat_output_instance_with_placeholder_and_button
 
