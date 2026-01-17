@@ -1,7 +1,8 @@
 # src/db/seed.py
 from sqlalchemy.orm import Session
-from src.models.products import Product, ProductVersion
+from src.models import Product, ProductVersion, ChatOutoput, Placeholder, Button
 from src.config import logger
+from src.crud.chat_outpus import create_chat_output_instance_with_placeholder_and_button
 
 
 def seed_initial_products(db: Session) -> None:
@@ -67,3 +68,10 @@ def seed_initial_products(db: Session) -> None:
 
     db.commit()
     logger.info("Dummy product data seeded successfully.")
+
+
+# TODO
+# it should chech weather the instance exists or not if yes skip
+def seed_initial_chat_outputs(
+    db: Session,
+) -> None: ...

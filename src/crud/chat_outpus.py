@@ -1,17 +1,41 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
+from typing import Sequence
+
 from src.models import ChatOutoput
 from src.config import logger
 
+from dataclasses import dataclass
 
-def create_chat_output_instance(db: Session, name: str, text: str):
+
+@dataclass(frozen=True)
+class CreatePlaceholderItem:
+    chat_output_id: int
+    name: str
+    type: str
+
+
+@dataclass(frozen=True)
+class CreateButtonItem:
+    chat_output_id: int
+    name: str
+    text: str
+
+
+# TODO
+def create_chat_output_instance_with_placeholder_and_button(
+    db: Session,
+    name: str,
+    text: str,
+    placeholder_items: Sequence[CreatePlaceholderItem],
+    button_items: Sequence[CreateButtonItem],
+):
     try:
-        chat_output = ChatOutoput(name=name, text=text)
-        db.add(chat_output)
-        db.commit()
-        db.refresh(chat_output)
-        return chat_output
+        """
+        this will create a chat output instance wiht the placeholder and button children
+        """
+        ...
     except SQLAlchemyError as e:
         db.rollback()
         logger.error("failed to create chat_output: %s", e)

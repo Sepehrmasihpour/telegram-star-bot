@@ -15,6 +15,7 @@ def _t(s: str) -> str:
 
 
 def _fill_placeholdres(text: str, **fields: str) -> str:
+    # TODO
     # this will basicly do the job of f"" and find the words that have []
     # with the fields value that has the same name
     ...
