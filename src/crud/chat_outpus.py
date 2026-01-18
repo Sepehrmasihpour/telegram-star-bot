@@ -22,6 +22,7 @@ class CreateButtonItem:
     name: str
     text: str
     number: int
+    callback_data: str
 
 
 # TODO

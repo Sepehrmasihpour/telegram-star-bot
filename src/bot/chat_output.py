@@ -1,5 +1,5 @@
 from typing import Union, Dict, List
-from src.models import Product, ProductVersion
+from src.models import Product, ProductVersion, ChatOutput
 from textwrap import dedent
 from typing import Optional
 from decimal import Decimal
@@ -14,10 +14,25 @@ def _t(s: str) -> str:
     return dedent(s).strip()
 
 
+# TODO
 def _fill_placeholdres(text: str, **fields: str) -> str:
-    # TODO
-    # this will basicly do the job of f"" and find the words that have []
+    # this will basicly do the job of f"" and find the words that have {}
     # with the fields value that has the same name
+    ...
+
+
+# TODO
+def _map_buttons_in_order(chat_output: ChatOutput) -> List[List[Dict]]:
+    """
+    This will take the chat_output object and take the buttons from it and
+    than return a list of lists in each list is an object repesenting
+    the inline button and is a dict and it's text is button.text and callback_data is
+    button.callback_data.text the buttons are ordered based on the number
+    field in the Button objects from lowest to highest
+    also because some of the inline buttons use the variables in the
+    output like phone number,etc,... in the callback_data and in the text
+    here we should apply the _fill_placeholders to both
+    """
     ...
 
 
@@ -123,39 +138,15 @@ class TelegrambotOutputs:
             self.phone_number_verification_needed_data = {
                 "chat_id": chat_id,
                 "text": _t(_fill_placeholdres(chat_output.text)),
+                "reply_markup": {
+                    "inline_keyboard": _map_buttons_in_order(chat_output=chat_output)
+                },
+                "parse_mode": "Markdown",
             }
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                f"""
-                ❌ **Your phone number ({phone_number}) has not been verified**
-                📱 In order to continue please verify your phone number.
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📱send verification code to phone number",
-                            "callback_data": "send_validation_code",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "📝Edit phone number",
-                            "callback_data": "edit_phone_number",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🔁 return to menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
+            self.phone_number_verfication_needed_update_expiry = (
+                datetime.now + timedelta(minutes=self.minutes_to_update)
+            )
+        return self.phone_number_verification_needed_data
 
     @staticmethod
     def authentication_failed(chat_id: Union[str, int]):
