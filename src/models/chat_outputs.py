@@ -18,13 +18,14 @@ class ChatOutput(Base):
     placehoders: Mapped[list["Placeholder"]] = relationship(
         back_populates="chat_output", cascade="all,delete-orphan"
     )
-    buttons: Mapped[list["Button"]] = relationship(
+    button_indexes: Mapped[list["ButtonIndex"]] = relationship(
         back_populates="chat_output", cascade="all,delete-orphan"
     )
     __table_args__ = (UniqueConstraint("name", name="uq_chat_output_name"),)
 
 
 class Placeholder(Base):
+    __tablename__ = "placeholders"
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_output_id: Mapped[int] = mapped_column(
         ForeignKey("chat_outputs.id", ondelete="CASCADE")
@@ -37,12 +38,20 @@ class Placeholder(Base):
     chat_output: Mapped["ChatOutput"] = relationship(back_populates="placeholders")
 
 
-class Button(Base):
+class ButtonIndex(Base):
+    __tablename__ = "button_indexes"
     id: Mapped[int] = mapped_column(primary_key=True)
     chat_output_id: Mapped[int] = mapped_column(
         ForeignKey("chat_outputs.id", ondelete="CASCADE")
     )
     number: Mapped[int] = mapped_column(Integer, nullable=False)
+    button_id: Mapped[int] = mapped_column(ForeignKey("buttons.id"))
+    chat_output: Mapped["ChatOutput"] = relationship(back_populates="button_indexes")
+
+
+class Button(Base):
+    __tablename__ = "buttons"
+    id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(5, 100), nullable=False)
     text: Mapped[str] = mapped_column(String(1, 600), nullable=False)
-    chat_output: Mapped["ChatOutput"] = relationship(back_populates="buttons")
+    callback_data: Mapped[str] = mapped_column(String(1, 500), nullable=False)

@@ -22,7 +22,7 @@ def _fill_placeholdres(text: str, **fields: str) -> str:
 
 
 # TODO
-def _map_buttons_in_order(chat_output: ChatOutput) -> List[List[Dict]]:
+def _map_buttons_in_order(db: Session, chat_output: ChatOutput) -> List[List[Dict]]:
     """
     This will take the chat_output object and take the buttons from it and
     than return a list of lists in each list is an object repesenting
@@ -327,7 +327,7 @@ class TelegrambotOutputs:
         lines: list[str] = ["📊 **Current Prices:**", ""]
 
         for product_name, variations in prices.items():
-            emoji = EMOJI_PAIRINGS.get(product_name, "🛒")
+            emoji = EMOJI_PAIRINGS.get(product_name, "")
             lines.append(f"{emoji} *{product_name}*\n")
 
             for variation, value in variations.items():

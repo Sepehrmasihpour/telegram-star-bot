@@ -17,25 +17,23 @@ class CreatePlaceholderItem:
 
 
 @dataclass(frozen=True)
-class CreateButtonItem:
+class CreateButtonIndexItem:
     chat_output_id: int
-    name: str
-    text: str
     number: int
-    callback_data: str
+    button_id: int
 
 
 # TODO
-def create_chat_output_instance_with_placeholder_and_button(
+def create_chat_output_instance_with_placeholder_and_button_indexes(
     db: Session,
     name: str,
     text: str,
     placeholder_items: Sequence[CreatePlaceholderItem],
-    button_items: Sequence[CreateButtonItem],
+    button_index_items: Sequence[CreateButtonIndexItem],
 ):
     try:
         """
-        this will create a chat output instance wiht the placeholder and button children
+        this will create a chat output instance wiht the placeholder and button index children
         """
         ...
     except SQLAlchemyError as e:
