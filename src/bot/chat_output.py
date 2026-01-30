@@ -1,3 +1,5 @@
+import re
+
 from typing import Union, Dict, List
 from src.models import Product, ProductVersion, ChatOutput
 from textwrap import dedent
@@ -14,93 +16,85 @@ def _t(s: str) -> str:
     return dedent(s).strip()
 
 
-# TODO
-def _fill_placeholdres(text: str, **fields: str) -> str:
-    # this will basicly do the job of f"" and find the words that have {}
-    # with the fields value that has the same name
-    ...
+PLACEHOLDER_RE = re.compile(r"{(\w+)}")
 
 
-# TODO
-def _map_buttons_in_order(db: Session, chat_output: ChatOutput) -> List[List[Dict]]:
+def _fill_placeholders(text: str, **fields: str) -> str:
+    needed = set(PLACEHOLDER_RE.findall(text))
+    provided = set(fields.keys())
+
+    missing = needed - provided
+    if missing:
+        raise ValueError(f"Missing placeholders: {missing}")
+
+    return text.format(**fields)
+
+
+def _map_buttons_in_order(
+    chat_output: ChatOutput, row_size: int = 1, **placeholders
+) -> list[list[dict]]:
+    buttons = sorted(chat_output.button_indexes, key=lambda bi: bi.number)
+
+    rendered = []
+    for bi in buttons:
+        btn = bi.button
+        rendered.append(
+            {
+                "text": _fill_placeholders(btn.text, **placeholders),
+                "callback_data": _fill_placeholders(btn.callback_data, **placeholders),
+            }
+        )
+
+    return [rendered[i : i + row_size] for i in range(0, len(rendered), row_size)]
+
+
+def _render_chat_outputs(
+    template: ChatOutput, chat_id: Union[str, int], row_size: int = 1, **placeholders
+) -> dict:
     """
-    This will take the chat_output object and take the buttons from it and
-    than return a list of lists in each list is an object repesenting
-    the inline button and is a dict and it's text is button.text and callback_data is
-    button.callback_data.text the buttons are ordered based on the number
-    field in the Button objects from lowest to highest
-    also because some of the inline buttons use the variables in the
-    output like phone number,etc,... in the callback_data and in the text
-    here we should apply the _fill_placeholders to both
+    Render a ChatOutput template into a Telegram-ready payload.
     """
-    ...
+
+    # Normalize text
+    raw_text = _t(template.text)
+
+    # Fill placeholders
+    rendered_text = _fill_placeholders(raw_text, **placeholders)
+
+    # Render buttons
+    keyboard = _map_buttons_in_order(
+        chat_output=template, row_size=row_size, **placeholders
+    )
+
+    return {
+        "chat_id": chat_id,
+        "text": rendered_text,
+        "parse_mode":"Markdown"
+        "reply_markup": {"inline_keyboard": keyboard} if keyboard else None,
+    }
 
 
 EMOJI_PAIRINGS = {"Premium Stars Pack": "🌟", "Telegram Premium Upgrade": "💎"}
 
 
 class TelegrambotOutputs:
-    def __init__(self, minutes_to_update: Optional[datetime] = 5):
-        # minutes left to update
-        self.minutes_to_update = minutes_to_update
-        self.unsupported_command_update_expiry = None
-        self.phone_number_input_update_expiry = None
-        self.phone_number_verfication_needed_update_expiry = None
-        self.authentication_failed_update_expiry = None
-        self.max_attempt_reached_update_expiry = None
-        self.invalid_phone_number_update_expiry = None
-        self.invalid_otp_update_expiry = None
-        self.chat_verification_needed_update_expiry = None
-        self.login_to_acount_update_expiry = None
-        self.already_logged_in_update_expiry = None
-        self.phone_numebr_verification_update_expiry = None
-        self.phone_number_verified_update_expiry = None
-        self.loading_prices_update_expiry = None
-        self.get_prices_update_expiry = None
-        self.buy_product_update_expiry = None
-        self.buy_product_version_update_expiry = None
-        self.payment_gateway_update_expiry = None
-        self.payment_confirmed_update_expiry = None
-        self.payment_not_confirmed_update_expiry = None
-        self.empty_answer_callback_update_expiry = None
-        self.show_terms_condititons_update_expiry = None
-        self.terms_and_conditions_update_expiry = None
-        self.return_to_menu_update_expiry = None
-        self.support_update_expiry = None
-        self.contact_support_info_update_expiry = None
-        self.common_questions_update_expiry = None
-
+    def __init__(self):
         # outputs chche data
-        self.unsupported_command_data = None
-        self.phone_number_input_data = None
-        self.phone_number_verification_needed_data = None
+        self._chat_output_cache: Dict[str, ChatOutput]
 
-    def _needs_update(self, update_expiry: datetime | None, data: Dict | None):
-        if not update_expiry or not data:
-            return True
-        current_time = datetime.now()
-        if not update_expiry - current_time > 0:
-            return True
-        return False
+    def _get_template(self, db: Session, name: str) -> ChatOutput:
+        template = self._chat_output_cache.get(name)
+        if template is None:
+            template = get_chat_output_by_name(db=db, name=name)
+            self._chat_output_cache[name] = template
+        return template
 
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
-        if (
-            self._needs_update(
-                update_expiry=self.unsupported_command_update_expiry,
-                data=self.unsupported_command_data,
-            )
-            is True
-        ):
-            chat_output = get_chat_output_by_name(db=db, name="unsupported_command")
-            self.unsupported_command_data = {
-                "chat_id": chat_id,
-                "text": _t(_fill_placeholdres(chat_output.text)),
-            }
-            self.unsupported_command_update_expiry = datetime.now + timedelta(
-                minutes=self.minutes_to_update
-            )
 
-        return self.unsupported_command_data
+        template = self._get_template(db, name="unsupported_command")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
+
+        return render
 
     def phone_number_input(self, db: Session, chat_id: Union[str, int]):
         if (
@@ -113,7 +107,7 @@ class TelegrambotOutputs:
             chat_output = get_chat_output_by_name(db=db, name="phone_number_input")
             self.phone_number_input_data = {
                 "chat_id": chat_id,
-                "text": _t(_fill_placeholdres(chat_output.text)),
+                "text": _t(_fill_placeholders(chat_output.text)),
                 "parse_mode": "Markdown",
             }
             self.phone_number_input_update_expiry = datetime.now + timedelta(
@@ -137,7 +131,7 @@ class TelegrambotOutputs:
             )
             self.phone_number_verification_needed_data = {
                 "chat_id": chat_id,
-                "text": _t(_fill_placeholdres(chat_output.text)),
+                "text": _t(_fill_placeholders(chat_output.text)),
                 "reply_markup": {
                     "inline_keyboard": _map_buttons_in_order(chat_output=chat_output)
                 },
@@ -936,7 +930,7 @@ telegram_process_bot_outputs = TelegrambotOutputs()
 #     return dedent(s).strip()
 
 
-# def _fill_placeholdres(text: str, **fields: str) -> str:
+# def _fill_placeholders(text: str, **fields: str) -> str:
 #     # this will basicly do the job of f"" and find the words that have []
 #     # with the fields value that has the same name
 #     ...
