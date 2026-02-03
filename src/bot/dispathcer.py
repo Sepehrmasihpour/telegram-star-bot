@@ -29,7 +29,7 @@ async def dispatch_response(
                 request=request, payload=payload.get("params")
             )
         if method == "custom":
-            data = payload.get("payload")
+            data = payload.get("params")
             return await custom_handler(request, db, data)
 
     except Exception as e:

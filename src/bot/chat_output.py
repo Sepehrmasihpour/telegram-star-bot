@@ -7,7 +7,6 @@ from typing import Optional
 from decimal import Decimal
 from typing import Any
 from sqlalchemy.orm import Session
-from datetime import timedelta, datetime
 from src.crud.chat_outpus import get_chat_output_by_name
 
 
@@ -49,7 +48,12 @@ def _map_buttons_in_order(
 
 
 def _render_chat_outputs(
-    template: ChatOutput, chat_id: Union[str, int], row_size: int = 1, **placeholders
+    template: ChatOutput,
+    chat_id: Union[str, int],
+    row_size: int = 1,
+    message_id: Optional[Union[str, int]] = None,
+    method: Optional[str] = None,
+    **placeholders,
 ) -> dict:
     """
     Render a ChatOutput template into a Telegram-ready payload.
@@ -65,13 +69,16 @@ def _render_chat_outputs(
     keyboard = _map_buttons_in_order(
         chat_output=template, row_size=row_size, **placeholders
     )
-
-    return {
+    params = {
         "chat_id": chat_id,
         "text": rendered_text,
-        "parse_mode":"Markdown"
+        "parse_mode": "Markdown",
         "reply_markup": {"inline_keyboard": keyboard} if keyboard else None,
     }
+    if message_id is not None:
+        params["message_id"] = message_id
+
+    return params if method is None else {"method": method, "params": params}
 
 
 EMOJI_PAIRINGS = {"Premium Stars Pack": "🌟", "Telegram Premium Upgrade": "💎"}
@@ -97,213 +104,90 @@ class TelegrambotOutputs:
         return render
 
     def phone_number_input(self, db: Session, chat_id: Union[str, int]):
-        if (
-            self._needs_update(
-                update_expiry=self.phone_number_input_update_expiry,
-                data=self.unsupported_command_data,
-            )
-            is True
-        ):
-            chat_output = get_chat_output_by_name(db=db, name="phone_number_input")
-            self.phone_number_input_data = {
-                "chat_id": chat_id,
-                "text": _t(_fill_placeholders(chat_output.text)),
-                "parse_mode": "Markdown",
-            }
-            self.phone_number_input_update_expiry = datetime.now + timedelta(
-                minutes=self.minutes_to_update
-            )
+        template = self._get_template(db, name="phone_number_input")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
 
-        return self.phone_number_input_data
+        return render
 
     def phone_number_verification_needed(
         self, chat_id: Union[str, int], db: Session, phone_number: str
     ):
-        if (
-            self._needs_update(
-                update_expiry=self.phone_number_verfication_needed_update_expiry,
-                data=self.phone_number_verification_needed_data,
-            )
-            is True
-        ):
-            chat_output = get_chat_output_by_name(
-                db=db, name="phone_number_verification_needed"
-            )
-            self.phone_number_verification_needed_data = {
-                "chat_id": chat_id,
-                "text": _t(_fill_placeholders(chat_output.text)),
-                "reply_markup": {
-                    "inline_keyboard": _map_buttons_in_order(chat_output=chat_output)
-                },
-                "parse_mode": "Markdown",
-            }
-            self.phone_number_verfication_needed_update_expiry = (
-                datetime.now + timedelta(minutes=self.minutes_to_update)
-            )
-        return self.phone_number_verification_needed_data
+        template = self._get_template(db, name="phone_number_verification_needed")
+        render = _render_chat_outputs(
+            template=template, chat_id=chat_id, phone_number=phone_number
+        )
 
-    @staticmethod
-    def authentication_failed(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": "*authentication failed*",
-            "parse_mode": "Markdown",
-        }
+        return render
 
-    @staticmethod
-    def max_attempt_reached(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": "❌ *failed 3 times. canceled*",
-            "parse_mode": "Markdown",
-        }
+    def authentication_failed(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="authentication_failed")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
 
-    @staticmethod
-    def invalid_phone_number(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": "❌ *phone number is invalid*",
-            "parse_mode": "Markdown",
-        }
+        return render
 
-    @staticmethod
-    def invalid_otp(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": "❌ *validation code is invalid*",
-            "parse_mode": "Markdown",
-        }
+    def max_attempt_reached(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="max_attempt_reached")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
 
-    @staticmethod
-    def chat_verification_needed(chat_id: Union[str, int], phone_number: str):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                f"""
-                we need to make sure that this chat belongs to the user with this phone
-                number {phone_number} 
-                    
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📱 send verification code to phone number",
-                            "callback_data": "send_validation_code",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "📝 Edit phone number",
-                            "callback_data": "edit_phone_number",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🔁 return to menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-            "parse_mode": "Markdown",
-        }
+        return render
 
-    @staticmethod
-    def login_to_acount(chat_id: Union[str, int], phone_number: str):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                ⚠️ ** Theres a user with this phone number ** 
-                do you want to login to this acount or edit your phone number
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "🚪Login",
-                            "callback_data": f"login_to_acount:{phone_number}",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "📝 Edit phone number",
-                            "callback_data": "edit_phone_number",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🔁 return to menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
+    def invalid_phone_number(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="invalid_phone_number")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
 
-    @staticmethod
-    def already_logged_in(chat_id: Union[str, int], phone_number: str):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                f"""
-                ❌ ** you are already logged in ** 
-                you are currently logged in into the acount with the phone number
-                of ({phone_number}) 
-                """
-            ),
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "🔁 return to menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
+        return render
 
-    @staticmethod
-    def phone_numebr_verification(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                ✅ **The verification code has been sent to your phone number.**
-                Please enter the code.
+    def invalid_otp(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="invalid_otp")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
 
-                💳 **Important points about bank accounts:**
-                .the account that you use for payment must belong to the owner of the phone number
-                .the system verifies whether the phone number and the account number belong to the same person
-                .in case they don't, your payment will not go through
-                .if the account belongs to someone else, please use another account
-                """
-            ),
-            "parse_mode": "Markdown",
-        }
+        return render
 
-    @staticmethod
-    def phone_number_verified(chat_id: Union[str, int]):
-        return {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                    ✅ **Phone number successfully verified!**
-                    🌟Showing the products...
-                    """
-            ),
-            "parse_mode": "Markdown",
-        }
+    def chat_verification_needed(
+        self, db: Session, chat_id: Union[str, int], phone_number: str
+    ):
+        template = self._get_template(db, name="chat_verification_needed")
+        render = _render_chat_outputs(
+            template=template, chat_id=chat_id, phone_number=phone_number
+        )
 
-    @staticmethod
+        return render
+
+    def login_to_acount(self, db: Session, chat_id: Union[str, int], phone_number: str):
+        template = self._get_template(db, name="login_to_acount")
+        render = _render_chat_outputs(
+            template=template, chat_id=chat_id, phone_number=phone_number
+        )
+
+        return render
+
+    def already_logged_in(
+        self, db: Session, chat_id: Union[str, int], phone_number: str
+    ):
+        template = self._get_template(db, name="already_logged_in")
+        render = _render_chat_outputs(
+            template=template, chat_id=chat_id, phone_number=phone_number
+        )
+
+        return render
+
+    def phone_numebr_verification(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="phone_numebr_verification")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
+
+        return render
+
+    def phone_number_verified(self, db: Session, chat_id: Union[str, int]):
+        template = self._get_template(db, name="phone_number_verified")
+        render = _render_chat_outputs(template=template, chat_id=chat_id)
+
+        return render
+
+    # TODO think about how to incorprate this
     def loading_prices(chat_id: Union[str, int]):
         return {
             "method": "custom",
-            "payload": {
+            "params": {
                 "chat_id": chat_id,
                 "custom": "get_prices",
                 "message": {
@@ -313,6 +197,7 @@ class TelegrambotOutputs:
             },
         }
 
+    # TODO also this about this
     @staticmethod
     def get_prices(
         chat_id: Union[str, int],
@@ -352,6 +237,7 @@ class TelegrambotOutputs:
             },
         }
 
+    # TODO also this one
     @staticmethod
     def buy_product(
         chat_id: Union[str, int],
@@ -396,8 +282,9 @@ class TelegrambotOutputs:
             "reply_markup": {"inline_keyboard": keyboard},
         }
 
-    @staticmethod
     def buy_product_version(
+        self,
+        db: Session,
         chat_id: Union[int, str],
         product_version: ProductVersion,
         price: Decimal,
@@ -405,149 +292,66 @@ class TelegrambotOutputs:
     ):
         product = product_version.product
         product_name = product.name
-        emoji = EMOJI_PAIRINGS.get(product_name, "🛒")
-        text = "\n".join(
-            [
-                "🛒 **Chosen product:",
-                f"{emoji} {product.name}-{product_version.version_name}",
-                "",
-                f"💰 Price: {price}",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-                "💳 please chose your payment method:",
-                "",
-                "💻 payment gateway-online payment with test gateway",
-                "*₿* crypto-payment using crypto currency",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-            ]
+        product_version_name = product_version.version_name
+        template = self._get_template(db, name="buy_product_version")
+        render = _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            product_name=product_name,
+            product_version_name=product_version_name,
+            price=price,
+            order_id=order_id,
         )
-        keyboard = [
-            [
-                {
-                    "text": "💻 payment gateway",
-                    "callback_data": f"payment_gateway:{order_id}",
-                }
-            ],
-            [{"text": "₿ crypto", "callback_data": f"crypto_payment:{order_id}"}],
-            [{"text": "❌ cancel order", "callback_data": f"cancel_order:{order_id}"}],
-        ]
-        return {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
 
-    @staticmethod
+        return render
+
     def payment_gateway(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         order_id: Union[str, int],
         product_name: ProductVersion,
         amount: Union[Decimal, int, str],
         pay_url: str,
     ):
-        emoji = EMOJI_PAIRINGS.get(product_name, "🛒")
 
-        text = "\n".join(
-            [
-                "💻 **Pay via Payment Gateway (Test Gateway)**",
-                "",
-                f"📦 Product: {emoji} {product_name}",
-                f"💰 Amount: {amount}",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-                "",
-                "📝 **Instructions:**",
-                '1️⃣ Tap **"Pay Invoice"**',
-                "2️⃣ Review the invoice details",
-                "3️⃣ Tap **Online Payment** on the invoice page",
-                "4️⃣ You will be redirected to the payment gateway",
-                "5️⃣ Enter your card/bank details",
-                '6️⃣ After a successful payment, tap **"I Paid"** here',
-                "",
-                f"🆔 Invoice ID: `{order_id}`",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-            ]
+        template = self._get_template(db, name="payment_gateway")
+        render = _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            product_name=product_name,
+            amount=amount,
+            pay_url=pay_url,
+            order_id=order_id,
         )
 
-        keyboard = [
-            [{"text": "💳 Pay Invoice", "url": pay_url}],
-            [{"text": "✅ I Paid", "callback_data": f"confirm_payment:{order_id}"}],
-            [{"text": "❌ Cancel Order", "callback_data": f"cancel_order:{order_id}"}],
-        ]
+        return render
 
-        return {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
+    def payment_confirmed(
+        self, db: Session, chat_id: Union[int, str], order_id: Union[int, str]
+    ):
+
+        template = self._get_template(db, name="payment_confirmed")
+        render = _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            order_id=order_id,
+        )
+
+        return render
 
     @staticmethod
-    def payment_confirmed(chat_id: Union[int, str], order_id: Union[int, str]):
-        text = "\n".join(
-            [
-                "✅ **Payment Confirmed**",
-                "",
-                "Thank you. Your payment has been successfully verified.",
-                "Your order is now marked as **PAID** and will be processed.",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-                f"🆔 Order ID: `{order_id}`",
-                "",
-                "If you need anything else, you can return to the main menu.",
-            ]
+    def payment_not_confirmed(
+        self, db: Session, chat_id: Union[int, str], order_id: Union[int, str]
+    ):
+        template = self._get_template(db, name="payment_confirmed")
+        render = _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            order_id=order_id,
         )
 
-        keyboard = [
-            [{"text": "🏠 Return to Menu", "callback_data": "menu"}],
-        ]
-
-        return {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
-
-    @staticmethod
-    def payment_not_confirmed(chat_id: Union[int, str], order_id: Union[int, str]):
-        text = "\n".join(
-            [
-                "⏳ **Payment Not Found**",
-                "",
-                "We could not verify any successful payment for this order yet.",
-                "This may happen if:",
-                "• The payment is still being processed",
-                "• The payment failed or was canceled",
-                "• You have not completed the payment",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-                f"🆔 Order ID: `{order_id}`",
-                "",
-                'Please complete the payment and then press **"I Paid"** again.',
-            ]
-        )
-
-        keyboard = [
-            [
-                {
-                    "text": "💳 Try Payment Again",
-                    "callback_data": f"payment_gateway:{order_id}",
-                }
-            ],
-            [{"text": "❌ Cancel Order", "callback_data": f"cancel_order:{order_id}"}],
-            [{"text": "🏠 Return to Menu", "callback_data": "menu"}],
-        ]
-
-        return {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
+        return render
 
     @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
@@ -556,7 +360,7 @@ class TelegrambotOutputs:
             "params": {"callback_query_id": query_id},
         }
 
-    @staticmethod
+    # TODO think about how to incorprate this into the system
     def show_terms_condititons(
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
@@ -631,51 +435,33 @@ class TelegrambotOutputs:
             else params
         )
 
-    @staticmethod
     def terms_and_conditions(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
     ):
         if message_id is None and append is False:
             raise ValueError("when append is false message_id cannot be None")
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                **Terms and Conditions**
-
-                By using the test bot you are obligated to follow our terms of service.
-                If you agree to the terms, press the *'agree and accept'* button.
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "✅I agree and accept",
-                            "callback_data": "accepted_terms",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "📜See terms of service",
-                            "callback_data": "show_terms_for_acceptance",
-                        }
-                    ],
-                ]
-            },
-        }
-        if append is False:
-            params["message_id"] = message_id
-
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
+        template = self._get_template(db, name="terms_and_conditions")
+        render = (
+            _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+            )
+            if append is True
+            else _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+                method="editMessageText",
+                message_id=message_id,
+            )
         )
 
+        return render
+
+    # TODO think about how to incorprate this into the system
     @staticmethod
     def return_to_menu(
         chat_id: Union[str, int],
@@ -741,8 +527,9 @@ class TelegrambotOutputs:
         # append=True => sendMessage style payload
         return params
 
-    @staticmethod
     def support(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
@@ -752,61 +539,25 @@ class TelegrambotOutputs:
                 "telegram output support failed: message_id cannot be None when append is False"
             )
 
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                🆘 **Test bot support section**
-                
-                ━━━━━━━━━━━━━━━━━━━━
-
-                In order to receive help, pick one of the options below:
-
-                📞 *Contact with support* – contact info.
-                ❓ *Commonly asked questions* – common answers.
-                🔁 *Return to main menu* – returns to the main menu.
-                
-                ━━━━━━━━━━━━━━━━━━━━
-
-                💡 **Note:** For faster support, first look at commonly asked questions.
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📞contact with support",
-                            "callback_data": "contact_support",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "❓commonly asked questions",
-                            "callback_data": "common_questions",
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🔁return to main menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
-
-        if append is False:
-            params["message_id"] = message_id
-
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
+        template = self._get_template(db, name="support")
+        render = (
+            _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+            )
+            if append is True
+            else _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+                method="editMessageText",
+                message_id=message_id,
+            )
         )
+        return render
 
-    @staticmethod
     def contact_support_info(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         message_id: Optional[Union[str, int]] = None,
         append: Optional[bool] = False,
@@ -814,101 +565,46 @@ class TelegrambotOutputs:
         if message_id is None and append is False:
             raise ValueError("message_id can't be None when append is False")
 
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                📞 **Support Contact Information**
-
-                ━━━━━━━━━━━━━━━━━━━━
-
-                👤 **Telegram Support:**
-                • @TestSupport
-
-                ━━━━━━━━━━━━━━━━━━━━
-
-                ⏰ **Working Hours:**
-                • 24/7 (Available around the clock)
-
-                💡 **Important Notes:**
-                • For the fastest response, provide your invoice ID
-                • In case of payment issues, send your transaction details
-                • For delivery tracking, include your delivery reference
-
-                ━━━━━━━━━━━━━━━━━━━━
-
-                🔗 **Useful Links:**
-                • Official Channel: @TestBot
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [{"text": "🔁 Return to Menu", "callback_data": "return_to_menu"}],
-                    [
-                        {
-                            "text": "📞 Return to Support",
-                            "callback_data": "return_to_support",
-                        }
-                    ],
-                ]
-            },
-        }
-
-        if append is False:
-            params["message_id"] = message_id
-
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
+        template = self._get_template(db, name="contact_support_info")
+        render = (
+            _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+            )
+            if append is True
+            else _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+                method="editMessageText",
+                message_id=message_id,
+            )
         )
+        return render
 
-    @staticmethod
     def common_questions(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         message_id: Optional[Union[int, str]],
         append: Optional[bool] = False,
     ):
         if message_id is None and append is False:
             raise ValueError("message_id can't be None when append is False")
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                ❔ **commonly asked Q&A**
-
-                ━━━━━━━━━━━━━━━━━━━━
-                
-                1- ....
-                2- ....
-                3- ....
-                4- ....
-                
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [{"text": "🔁 Return to Menu", "callback_data": "return_to_menu"}],
-                    [
-                        {
-                            "text": "📞 Return to Support",
-                            "callback_data": "return_to_support",
-                        }
-                    ],
-                ]
-            },
-        }
-
-        if append is False:
-            params["message_id"] = message_id
-
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
+        template = self._get_template(db, name="common_questions")
+        render = (
+            _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+            )
+            if append is True
+            else _render_chat_outputs(
+                template=template,
+                chat_id=chat_id,
+                method="editMessageText",
+                message_id=message_id,
+            )
         )
+        return render
 
 
 telegram_process_bot_outputs = TelegrambotOutputs()
