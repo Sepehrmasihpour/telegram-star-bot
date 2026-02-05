@@ -73,10 +73,11 @@ def _render_chat_outputs(
         "chat_id": chat_id,
         "text": rendered_text,
         "parse_mode": "Markdown",
-        "reply_markup": {"inline_keyboard": keyboard} if keyboard else None,
     }
     if message_id is not None:
         params["message_id"] = message_id
+    if keyboard is not None:
+        params["reply_markup"] = {"inline_keyboard": keyboard}
 
     return params if method is None else {"method": method, "params": params}
 
@@ -87,7 +88,7 @@ EMOJI_PAIRINGS = {"Premium Stars Pack": "ðŸŒŸ", "Telegram Premium Upgrade": "ðŸ’
 class TelegrambotOutputs:
     def __init__(self):
         # outputs chche data
-        self._chat_output_cache: Dict[str, ChatOutput]
+        self._chat_output_cache: Dict[str, ChatOutput] = {}
 
     def _get_template(self, db: Session, name: str) -> ChatOutput:
         template = self._chat_output_cache.get(name)
@@ -96,92 +97,71 @@ class TelegrambotOutputs:
             self._chat_output_cache[name] = template
         return template
 
+    def _render(self, db: Session, name: str, chat_id: Union[str, int], **placeholders):
+        template = self._get_template(db, name=name)
+        return _render_chat_outputs(template=template, chat_id=chat_id, **placeholders)
+
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
-
-        template = self._get_template(db, name="unsupported_command")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="unsupported_command", chat_id=chat_id)
 
     def phone_number_input(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="phone_number_input")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="phone_number_input", chat_id=chat_id)
 
     def phone_number_verification_needed(
         self, chat_id: Union[str, int], db: Session, phone_number: str
     ):
-        template = self._get_template(db, name="phone_number_verification_needed")
-        render = _render_chat_outputs(
-            template=template, chat_id=chat_id, phone_number=phone_number
+        return self._render(
+            db=db,
+            name="phone_number_verification_needed",
+            chat_id=chat_id,
+            phone_number=phone_number,
         )
 
-        return render
-
     def authentication_failed(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="authentication_failed")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="authentication_failed", chat_id=chat_id)
 
     def max_attempt_reached(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="max_attempt_reached")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="max_attempt_reached", chat_id=chat_id)
 
     def invalid_phone_number(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="invalid_phone_number")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="invalid_phone_number", chat_id=chat_id)
 
     def invalid_otp(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="invalid_otp")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="invalid_otp", chat_id=chat_id)
 
     def chat_verification_needed(
         self, db: Session, chat_id: Union[str, int], phone_number: str
     ):
-        template = self._get_template(db, name="chat_verification_needed")
-        render = _render_chat_outputs(
-            template=template, chat_id=chat_id, phone_number=phone_number
+        return self._render(
+            db=db,
+            name="chat_verification_needed",
+            chat_id=chat_id,
+            phone_number=phone_number,
         )
-
-        return render
 
     def login_to_acount(self, db: Session, chat_id: Union[str, int], phone_number: str):
-        template = self._get_template(db, name="login_to_acount")
-        render = _render_chat_outputs(
-            template=template, chat_id=chat_id, phone_number=phone_number
+        return self._render(
+            db=db,
+            name="login_to_acount",
+            chat_id=chat_id,
+            phone_number=phone_number,
         )
-
-        return render
 
     def already_logged_in(
         self, db: Session, chat_id: Union[str, int], phone_number: str
     ):
-        template = self._get_template(db, name="already_logged_in")
-        render = _render_chat_outputs(
-            template=template, chat_id=chat_id, phone_number=phone_number
+        return self._render(
+            db=db,
+            name="already_logged_in",
+            chat_id=chat_id,
+            phone_number=phone_number,
         )
 
-        return render
-
     def phone_numebr_verification(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="phone_numebr_verification")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="phone_numebr_verification", chat_id=chat_id)
 
     def phone_number_verified(self, db: Session, chat_id: Union[str, int]):
-        template = self._get_template(db, name="phone_number_verified")
-        render = _render_chat_outputs(template=template, chat_id=chat_id)
-
-        return render
+        return self._render(db=db, name="phone_number_verified", chat_id=chat_id)
 
     # TODO think about how to incorprate this
     def loading_prices(chat_id: Union[str, int]):
@@ -293,9 +273,10 @@ class TelegrambotOutputs:
         product = product_version.product
         product_name = product.name
         product_version_name = product_version.version_name
-        template = self._get_template(db, name="buy_product_version")
-        render = _render_chat_outputs(
-            template=template,
+
+        return self._render(
+            db=db,
+            name="buy_product_version",
             chat_id=chat_id,
             product_name=product_name,
             product_version_name=product_version_name,
@@ -303,21 +284,18 @@ class TelegrambotOutputs:
             order_id=order_id,
         )
 
-        return render
-
     def payment_gateway(
         self,
         db: Session,
         chat_id: Union[str, int],
         order_id: Union[str, int],
-        product_name: ProductVersion,
+        product_name: str,
         amount: Union[Decimal, int, str],
         pay_url: str,
     ):
-
-        template = self._get_template(db, name="payment_gateway")
-        render = _render_chat_outputs(
-            template=template,
+        return self._render(
+            db=db,
+            name="payment_gateway",
             chat_id=chat_id,
             product_name=product_name,
             amount=amount,
@@ -325,33 +303,25 @@ class TelegrambotOutputs:
             order_id=order_id,
         )
 
-        return render
-
     def payment_confirmed(
         self, db: Session, chat_id: Union[int, str], order_id: Union[int, str]
     ):
-
-        template = self._get_template(db, name="payment_confirmed")
-        render = _render_chat_outputs(
-            template=template,
+        return self._render(
+            db=db,
+            name="payment_confirmed",
             chat_id=chat_id,
             order_id=order_id,
         )
 
-        return render
-
-    @staticmethod
     def payment_not_confirmed(
         self, db: Session, chat_id: Union[int, str], order_id: Union[int, str]
     ):
-        template = self._get_template(db, name="payment_confirmed")
-        render = _render_chat_outputs(
-            template=template,
+        return self._render(
+            db=db,
+            name="payment_not_confirmed",
             chat_id=chat_id,
             order_id=order_id,
         )
-
-        return render
 
     @staticmethod
     def empty_answer_callback(query_id: Union[str, int]):
@@ -444,22 +414,17 @@ class TelegrambotOutputs:
     ):
         if message_id is None and append is False:
             raise ValueError("when append is false message_id cannot be None")
-        template = self._get_template(db, name="terms_and_conditions")
-        render = (
-            _render_chat_outputs(
-                template=template,
-                chat_id=chat_id,
-            )
+
+        return (
+            self._render(db=db, name="terms_and_conditions", chat_id=chat_id)
             if append is True
             else _render_chat_outputs(
-                template=template,
+                template=self._get_template(db, name="terms_and_conditions"),
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
             )
         )
-
-        return render
 
     # TODO think about how to incorprate this into the system
     @staticmethod
@@ -539,21 +504,16 @@ class TelegrambotOutputs:
                 "telegram output support failed: message_id cannot be None when append is False"
             )
 
-        template = self._get_template(db, name="support")
-        render = (
-            _render_chat_outputs(
-                template=template,
-                chat_id=chat_id,
-            )
+        return (
+            self._render(db=db, name="support", chat_id=chat_id)
             if append is True
             else _render_chat_outputs(
-                template=template,
+                template=self._get_template(db, name="support"),
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
             )
         )
-        return render
 
     def contact_support_info(
         self,
@@ -565,21 +525,16 @@ class TelegrambotOutputs:
         if message_id is None and append is False:
             raise ValueError("message_id can't be None when append is False")
 
-        template = self._get_template(db, name="contact_support_info")
-        render = (
-            _render_chat_outputs(
-                template=template,
-                chat_id=chat_id,
-            )
+        return (
+            self._render(db=db, name="contact_support_info", chat_id=chat_id)
             if append is True
             else _render_chat_outputs(
-                template=template,
+                template=self._get_template(db, name="contact_support_info"),
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
             )
         )
-        return render
 
     def common_questions(
         self,
@@ -590,21 +545,17 @@ class TelegrambotOutputs:
     ):
         if message_id is None and append is False:
             raise ValueError("message_id can't be None when append is False")
-        template = self._get_template(db, name="common_questions")
-        render = (
-            _render_chat_outputs(
-                template=template,
-                chat_id=chat_id,
-            )
+
+        return (
+            self._render(db=db, name="common_questions", chat_id=chat_id)
             if append is True
             else _render_chat_outputs(
-                template=template,
+                template=self._get_template(db, name="common_questions"),
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
             )
         )
-        return render
 
 
 telegram_process_bot_outputs = TelegrambotOutputs()
