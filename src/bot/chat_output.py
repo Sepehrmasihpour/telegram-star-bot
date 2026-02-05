@@ -97,9 +97,23 @@ class TelegrambotOutputs:
             self._chat_output_cache[name] = template
         return template
 
-    def _render(self, db: Session, name: str, chat_id: Union[str, int], **placeholders):
+    def _render(
+        self,
+        db: Session,
+        name: str,
+        chat_id: Union[str, int],
+        method: Optional[str] = None,
+        message_id: Optional[Union[str, int]] = None,
+        **placeholders,
+    ):
         template = self._get_template(db, name=name)
-        return _render_chat_outputs(template=template, chat_id=chat_id, **placeholders)
+        return _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            method=method,
+            message_id=message_id,
+            **placeholders,
+        )
 
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
         return self._render(db=db, name="unsupported_command", chat_id=chat_id)
@@ -418,8 +432,9 @@ class TelegrambotOutputs:
         return (
             self._render(db=db, name="terms_and_conditions", chat_id=chat_id)
             if append is True
-            else _render_chat_outputs(
-                template=self._get_template(db, name="terms_and_conditions"),
+            else self._render(
+                db=db,
+                name="terms_and_conditions",
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
@@ -507,8 +522,9 @@ class TelegrambotOutputs:
         return (
             self._render(db=db, name="support", chat_id=chat_id)
             if append is True
-            else _render_chat_outputs(
-                template=self._get_template(db, name="support"),
+            else self._render(
+                db=db,
+                name="support",
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
@@ -528,8 +544,9 @@ class TelegrambotOutputs:
         return (
             self._render(db=db, name="contact_support_info", chat_id=chat_id)
             if append is True
-            else _render_chat_outputs(
-                template=self._get_template(db, name="contact_support_info"),
+            else self._render(
+                db=db,
+                name="contact_support_info",
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
@@ -549,8 +566,9 @@ class TelegrambotOutputs:
         return (
             self._render(db=db, name="common_questions", chat_id=chat_id)
             if append is True
-            else _render_chat_outputs(
-                template=self._get_template(db, name="common_questions"),
+            else self._render(
+                db=db,
+                name="common_questions",
                 chat_id=chat_id,
                 method="editMessageText",
                 message_id=message_id,
