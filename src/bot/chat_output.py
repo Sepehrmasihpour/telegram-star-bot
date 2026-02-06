@@ -30,7 +30,10 @@ def _fill_placeholders(text: str, **fields: str) -> str:
 
 
 def _map_buttons_in_order(
-    chat_output: ChatOutput, row_size: int = 1, **placeholders
+    chat_output: ChatOutput,
+    row_size: int = 1,
+    button_url: Optional[str] = None,
+    **placeholders,
 ) -> list[list[dict]]:
     buttons = sorted(chat_output.button_indexes, key=lambda bi: bi.number)
 
@@ -41,6 +44,12 @@ def _map_buttons_in_order(
             {
                 "text": _fill_placeholders(btn.text, **placeholders),
                 "callback_data": _fill_placeholders(btn.callback_data, **placeholders),
+            }
+            if button_url is None
+            else {
+                "text": _fill_placeholders(btn.text, **placeholders),
+                "callback_data": _fill_placeholders(btn.callback_data, **placeholders),
+                "url": button_url,
             }
         )
 
@@ -53,6 +62,7 @@ def _render_chat_outputs(
     row_size: int = 1,
     message_id: Optional[Union[str, int]] = None,
     method: Optional[str] = None,
+    button_url: Optional[str] = None,
     **placeholders,
 ) -> dict:
     """
@@ -67,7 +77,7 @@ def _render_chat_outputs(
 
     # Render buttons
     keyboard = _map_buttons_in_order(
-        chat_output=template, row_size=row_size, **placeholders
+        chat_output=template, row_size=row_size, button_url=button_url, **placeholders
     )
     params = {
         "chat_id": chat_id,
@@ -104,6 +114,7 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         method: Optional[str] = None,
         message_id: Optional[Union[str, int]] = None,
+        button_url: Optional[str] = None,
         **placeholders,
     ):
         template = self._get_template(db, name=name)
@@ -112,6 +123,7 @@ class TelegrambotOutputs:
             chat_id=chat_id,
             method=method,
             message_id=message_id,
+            button_url=button_url,
             **placeholders,
         )
 
@@ -376,7 +388,7 @@ class TelegrambotOutputs:
             chat_id=chat_id,
             product_name=product_name,
             amount=amount,
-            pay_url=pay_url,
+            button_url=pay_url,
             order_id=order_id,
         )
 
