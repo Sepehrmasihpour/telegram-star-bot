@@ -115,6 +115,94 @@ class TelegrambotOutputs:
             **placeholders,
         )
 
+    def _render_with_keyboard(
+        self,
+        db: Session,
+        name: str,
+        chat_id: Union[str, int],
+        inline_keyboard: list[list[dict]],
+        method: str | None = None,
+        message_id: str | int | None = None,
+        **placeholders,
+    ) -> dict:
+        """
+        Render a DB template (editable text) but override reply_markup with a dynamic keyboard.
+        Keeps editMessageText/sendMessage behavior via method/message_id.
+        """
+        payload = self._render(
+            db=db,
+            name=name,
+            chat_id=chat_id,
+            method=method,
+            message_id=message_id,
+            **placeholders,
+        )
+
+        if method is None:
+            payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
+            return payload
+
+        # method wrapper
+        payload["params"]["reply_markup"] = {"inline_keyboard": inline_keyboard}
+        return payload
+
+    def _render_with_keyboard_append_template(
+        self,
+        db: Session,
+        name: str,
+        chat_id: Union[str, int],
+        dynamic_keyboard: list[list[dict]],
+        row_size: int = 1,
+        method: str | None = None,
+        message_id: str | int | None = None,
+        **placeholders,
+    ) -> dict:
+        """
+        Render DB template text, then build:
+        final_keyboard = dynamic_keyboard + template_keyboard(rendered from DB)
+        Template keyboard remains editable in DB.
+        """
+
+        template = self._get_template(db=db, name=name)
+
+        # Render text + other params using normal flow
+        payload = _render_chat_outputs(
+            template=template,
+            chat_id=chat_id,
+            row_size=row_size,
+            method=method,
+            message_id=message_id,
+            **placeholders,
+        )
+
+        # Render template keyboard (from DB) with placeholders
+        template_keyboard = _map_buttons_in_order(
+            chat_output=template, row_size=row_size, **placeholders
+        )
+
+        # Merge: dynamic first, template buttons appended
+        final_keyboard = (dynamic_keyboard or []) + (template_keyboard or [])
+
+        if method is None:
+            payload["reply_markup"] = {"inline_keyboard": final_keyboard}
+            return payload
+
+        payload["params"]["reply_markup"] = {"inline_keyboard": final_keyboard}
+        return payload
+
+    def _custom(self, chat_id: Union[str, int], custom: str, message: dict) -> dict:
+        """
+        Internal action envelope (non-Telegram). Keeps your special transport feature.
+        """
+        return {
+            "method": "custom",
+            "params": {
+                "chat_id": chat_id,
+                "custom": custom,
+                "message": message,
+            },
+        }
+
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
         return self._render(db=db, name="unsupported_command", chat_id=chat_id)
 
@@ -177,104 +265,116 @@ class TelegrambotOutputs:
     def phone_number_verified(self, db: Session, chat_id: Union[str, int]):
         return self._render(db=db, name="phone_number_verified", chat_id=chat_id)
 
-    # TODO think about how to incorprate this
-    def loading_prices(chat_id: Union[str, int]):
-        return {
-            "method": "custom",
-            "params": {
-                "chat_id": chat_id,
-                "custom": "get_prices",
-                "message": {
-                    "chat_id": chat_id,
-                    "text": "💰 please wait a moment to get the most up to date prices",
-                },
-            },
-        }
+    def loading_prices(self, db: Session, chat_id: Union[str, int]) -> dict:
+        message = self._render(db=db, name="loading_prices_message", chat_id=chat_id)
+        return self._custom(chat_id=chat_id, custom="get_prices", message=message)
 
-    # TODO also this about this
-    @staticmethod
     def get_prices(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         prices: Dict[str, Dict[str, Decimal | str]],
+        message_id: str | int | None = None,
+        append: bool = True,
     ) -> Dict[str, Any]:
-        lines: list[str] = ["📊 **Current Prices:**", ""]
 
+        lines: list[str] = []
         for product_name, variations in prices.items():
             emoji = EMOJI_PAIRINGS.get(product_name, "")
-            lines.append(f"{emoji} *{product_name}*\n")
-
+            lines.append(f"{emoji} *{product_name}*")
             for variation, value in variations.items():
                 if isinstance(value, Decimal):
                     normalized = value.quantize(Decimal("1"))
                     price_str = f"{normalized:,} T"
-
                 else:
                     price_str = f"{value:,} T"
+                lines.append(f"    ➜ **{variation}**")
+                lines.append(f"    💰 price: {price_str}")
+            lines.append("━━━━━━━━━━━━━━━━━━━━")
+            lines.append("")
 
-                lines.append(f"    ➜ **{variation}** ")
-                lines.append(f"    💰price: {price_str}")
-                lines.append("━━━━━━━━━━━━━━━━━━━━\n")
-        final_text = _t("\n".join(lines))
-        return {
-            "chat_id": chat_id,
-            "text": final_text,
-            "parse_mode": "Markdown",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "return to main menu",
-                            "callback_data": "return_to_menu",
-                        }
-                    ],
-                ]
-            },
-        }
+        prices_block = _t("\n".join(lines))
 
-    # TODO also this one
-    @staticmethod
+        keyboard = [
+            [{"text": "return to main menu", "callback_data": "return_to_menu"}],
+        ]
+
+        if append:
+            return self._render_with_keyboard(
+                db=db,
+                name="get_prices",
+                chat_id=chat_id,
+                inline_keyboard=keyboard,
+                prices_block=prices_block,
+            )
+
+        if message_id is None:
+            raise ValueError("message_id can't be None when append is False")
+
+        return self._render_with_keyboard(
+            db=db,
+            name="get_prices",
+            chat_id=chat_id,
+            inline_keyboard=keyboard,
+            method="editMessageText",
+            message_id=message_id,
+            prices_block=prices_block,
+        )
+
     def buy_product(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         product: Product,
-        versions_prices,
+        versions_prices: Dict[str, Any],
+        message_id: str | int | None = None,
+        append: bool = True,
     ) -> Dict[str, Any]:
-        lines: List[str] = []
         emoji = EMOJI_PAIRINGS.get(product.name, "🛒")
-        versions = product.versions
+
+        # dynamic prices block for template text
+        lines: list[str] = []
         for version_name, version_price in versions_prices.items():
             lines.append(f"{emoji} **{version_name}**")
-            lines.append(f"💰 **price:{version_price}**")
-            lines.append("━━━━━━━━━━━━━━━━━━━━\n")
-        prices_text = "\n".join(lines)
-        text = "\n".join(
-            [
-                f"🎉 *Buying {product.name}!*",
-                "",
-                "**list of prices** 📋",
-                "",
-                prices_text,
-                "",
-                "💡 *In order to choose the desired product press the releavent button*",
-            ]
-        )
-        version_rows = [
+            lines.append(f"💰 **price: {version_price}**")
+            lines.append("━━━━━━━━━━━━━━━━━━━━")
+            lines.append("")
+        prices_block = _t("\n".join(lines))
+
+        # dynamic keyboard: one per version
+        dynamic_rows = [
             [
                 {
                     "text": f"🛒 {v.version_name}",
                     "callback_data": f"buy_product_version:{v.id}",
                 }
             ]
-            for v in versions
+            for v in (product.versions or [])
         ]
-        keyboard = version_rows + [
-            [{"text": "return to menu 🔁", "callback_data": "return_to_menu"}]
-        ]
-        return {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
+
+        if append:
+            return self._render_with_keyboard_append_template(
+                db=db,
+                name="buy_product",
+                chat_id=chat_id,
+                dynamic_keyboard=dynamic_rows,
+                product_name=product.name,
+                prices_block=prices_block,
+            )
+
+        if message_id is None:
+            raise ValueError("message_id can't be None when append is False")
+
+        return self._render_with_keyboard_append_template(
+            db=db,
+            name="buy_product",
+            chat_id=chat_id,
+            dynamic_keyboard=dynamic_rows,
+            method="editMessageText",
+            message_id=message_id,
+            product_name=product.name,
+            prices_block=prices_block,
+        )
 
     def buy_product_version(
         self,
@@ -344,79 +444,35 @@ class TelegrambotOutputs:
             "params": {"callback_query_id": query_id},
         }
 
-    # TODO think about how to incorprate this into the system
+    """
+    ! VERY VERY IMPORTANT
+    ! The former structure of this output was so that depending
+    ! of the paramater of form:bool it would either have a read_terms button
+    ! or a return to menu button. Given the change to the handling of the outputs
+    ! I have deleted that param and it will render both buttons each time
+    ! so the flow needs to be handled in a lower level 
+    
+    """
+
     def show_terms_condititons(
+        self,
+        db: Session,
         chat_id: Union[str, int],
-        message_id: Optional[Union[str, int]] = None,
-        append: Optional[bool] = False,
-        form: Optional[bool] = False,
-    ):
-        if append is False and message_id is None:
-            raise ValueError("when append is false message_id cannot be None")
-        inline_keyboard = (
-            [
-                [
-                    {
-                        "text": "I read the terms",
-                        "callback_data": "read_the_terms",
-                    }
-                ],
-            ]
-            if form is True
-            else [
-                [
-                    {
-                        "text": "return to the menu",
-                        "callback_data": "return_to_menu",
-                    }
-                ],
-            ]
-        )
-        params = {
-            "chat_id": chat_id,
-            "text": _t(
-                """
-                📜 **Terms of service agreement**
+        message_id: str | int | None = None,
+        append: bool = True,
+    ) -> dict:
+        if append:
+            return self._render(db=db, name="show_terms_condititons", chat_id=chat_id)
 
-                🔰 **Terms of Using the Test Bot:**
+        if message_id is None:
+            raise ValueError("when append is False, message_id cannot be None")
 
-                1️⃣ **General Rules:**
-                • This service is intended for purchasing Telegram Stars and Telegram Premium.
-                • The user is required to provide accurate and complete information.
-                • Any misuse of the service is prohibited.
-
-                2️⃣ **Payment Rules:**
-                • Payments are non-refundable.
-                • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
-                  for verification before the product is delivered.
-
-                3️⃣ **Privacy:**
-                • Your personal information will be kept confidential.
-                • The information is used for identity and payment verification.
-                • Information will not be shared with any third party.
-
-                4️⃣ **Responsibilities:**
-                • We are committed to delivering products intact and on time.
-                • The user is responsible for the accuracy of the information they provide.
-                • Any form of fraud will result in being banned from the service.
-
-                5️⃣ **Support:**
-                • Support is available to you.
-                • Response time: up to 2 hours.
-                • Support contact: @TestSupport.
-
-                ⚠️ **Note:** By using this service, you accept all of the above terms.
-                """
-            ),
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": inline_keyboard},
-        }
-        if append is False:
-            params["message_id"] = message_id
-        return (
-            {"method": "editMessageText", "params": params}
-            if append is False
-            else params
+        return self._render(
+            db=db,
+            name="show_terms_condititons",
+            chat_id=chat_id,
+            method="editMessageText",
+            message_id=message_id,
         )
 
     def terms_and_conditions(
@@ -441,71 +497,51 @@ class TelegrambotOutputs:
             )
         )
 
-    # TODO think about how to incorprate this into the system
-    @staticmethod
     def return_to_menu(
+        self,
+        db: Session,
         chat_id: Union[str, int],
         products: List[Product],
-        message_id: Optional[Union[str, int]] = None,
-        append: Optional[bool] = False,
-    ):
-        if message_id is None and append is False:
-            raise ValueError("message_id can't be none when append is false")
-
-        # --------- dynamic text ----------
+        message_id: str | int | None = None,
+        append: bool = True,
+    ) -> dict:
+        # dynamic block for text
         if products:
-            lines = []
+            product_lines = []
             for p in products:
-                emoji = EMOJI_PAIRINGS.get(p.name, "🛒")  # fallback emoji
-                lines.append(f"{emoji} *{p.name}*")  # use *...* for Markdown emphasis
-            products_text = "\n".join(lines)
-            hint_text = "💡 Choose a product below:"
+                emoji = EMOJI_PAIRINGS.get(p.name, "🛒")
+                product_lines.append(f"{emoji} *{p.name}*")
+            products_block = "\n".join(product_lines)
         else:
-            products_text = "• *(No products are available right now.)*"
-            hint_text = "💡 Please check back later."
+            products_block = "• *(No products are available right now.)*"
 
-        text = "\n".join(
-            [
-                "🌟 *Welcome to the test bot!*",
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-                "",
-                hint_text,
-                "",
-                products_text,
-                "",
-                "━━━━━━━━━━━━━━━━━━━━",
-            ]
-        )
-
-        # --------- dynamic keyboard (one button per product) ----------
-        # callback_data format recommendation:
-        #   buy_product:<product_id>
-        product_rows = [
+        # dynamic keyboard: one button per product
+        dynamic_rows = [
             [{"text": f"🛒 Buy {p.name}", "callback_data": f"buy_product:{p.id}"}]
             for p in (products or [])
         ]
 
-        # --------- append your static actions ----------
-        keyboard = product_rows + [
-            [{"text": "💰 Show prices", "callback_data": "show_prices"}],
-            [{"text": "📜 Show terms of service", "callback_data": "show_terms"}],
-            [{"text": "🆘 Support", "callback_data": "support"}],
-        ]
+        if append:
+            return self._render_with_keyboard_append_template(
+                db=db,
+                name="return_to_menu",
+                chat_id=chat_id,
+                dynamic_keyboard=dynamic_rows,
+                products_block=products_block,
+            )
 
-        params = {
-            "chat_id": chat_id,
-            "text": text,
-            "parse_mode": "Markdown",
-            "reply_markup": {"inline_keyboard": keyboard},
-        }
+        if message_id is None:
+            raise ValueError("message_id can't be None when append is False")
 
-        if append is False:
-            params["message_id"] = message_id
-            return {"method": "editMessageText", "params": params}
-
-        # append=True => sendMessage style payload
-        return params
+        return self._render_with_keyboard_append_template(
+            db=db,
+            name="return_to_menu",
+            chat_id=chat_id,
+            dynamic_keyboard=dynamic_rows,
+            method="editMessageText",
+            message_id=message_id,
+            products_block=products_block,
+        )
 
     def support(
         self,
@@ -1138,80 +1174,82 @@ telegram_process_bot_outputs = TelegrambotOutputs()
 #             "params": {"callback_query_id": query_id},
 #         }
 
-#     @staticmethod
-#     def show_terms_condititons(
-#         chat_id: Union[str, int],
-#         message_id: Optional[Union[str, int]] = None,
-#         append: Optional[bool] = False,
-#         form: Optional[bool] = False,
-#     ):
-#         if append is False and message_id is None:
-#             raise ValueError("when append is false message_id cannot be None")
-#         inline_keyboard = (
-#             [
-#                 [
-#                     {
-#                         "text": "I read the terms",
-#                         "callback_data": "read_the_terms",
-#                     }
-#                 ],
-#             ]
-#             if form is True
-#             else [
-#                 [
-#                     {
-#                         "text": "return to the menu",
-#                         "callback_data": "return_to_menu",
-#                     }
-#                 ],
-#             ]
-#         )
-#         params = {
-#             "chat_id": chat_id,
-#             "text": _t(
-#                 """
-#                 📜 **Terms of service agreement**
 
-#                 🔰 **Terms of Using the Test Bot:**
+#! VERY VERY IMPORTANT
+#! The former structure of this output was so that depending
+#! of the paramater of form:bool it would either have a read_terms button
+#! or a return to menu button. Given the change to the handling of the outputs
+#! I have deleted that param and it will render both buttons each time
+#! so the flow needs to be handled in a lower level
 
-#                 1️⃣ **General Rules:**
-#                 • This service is intended for purchasing Telegram Stars and Telegram Premium.
-#                 • The user is required to provide accurate and complete information.
-#                 • Any misuse of the service is prohibited.
+# @staticmethod
+# def show_terms_condititons(
+#     chat_id: Union[str, int],
+#     message_id: Optional[Union[str, int]] = None,
+#     append: Optional[bool] = False,
+# ):
+#     if append is False and message_id is None:
+#         raise ValueError("when append is false message_id cannot be None")
+#     inline_keyboard = [
+#         [
+#             {
+#                 "text": "I read the terms",
+#                 "callback_data": "read_the_terms",
+#             }
+#         ],
+#         [
+#             {
+#                 "text": "return to the menu",
+#                 "callback_data": "return_to_menu",
+#             }
+#         ],
+#     ]
+#     params = {
+#         "chat_id": chat_id,
+#         "text": _t(
+#             """
+#             📜 **Terms of service agreement**
 
-#                 2️⃣ **Payment Rules:**
-#                 • Payments are non-refundable.
-#                 • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
-#                   for verification before the product is delivered.
+#             🔰 **Terms of Using the Test Bot:**
 
-#                 3️⃣ **Privacy:**
-#                 • Your personal information will be kept confidential.
-#                 • The information is used for identity and payment verification.
-#                 • Information will not be shared with any third party.
+#             1️⃣ **General Rules:**
+#             • This service is intended for purchasing Telegram Stars and Telegram Premium.
+#             • The user is required to provide accurate and complete information.
+#             • Any misuse of the service is prohibited.
 
-#                 4️⃣ **Responsibilities:**
-#                 • We are committed to delivering products intact and on time.
-#                 • The user is responsible for the accuracy of the information they provide.
-#                 • Any form of fraud will result in being banned from the service.
+#             2️⃣ **Payment Rules:**
+#             • Payments are non-refundable.
+#             • By order of the Cyber Police (FATA), some transactions may require up to 72 hours
+#               for verification before the product is delivered.
 
-#                 5️⃣ **Support:**
-#                 • Support is available to you.
-#                 • Response time: up to 2 hours.
-#                 • Support contact: @TestSupport.
+#             3️⃣ **Privacy:**
+#             • Your personal information will be kept confidential.
+#             • The information is used for identity and payment verification.
+#             • Information will not be shared with any third party.
 
-#                 ⚠️ **Note:** By using this service, you accept all of the above terms.
-#                 """
-#             ),
-#             "parse_mode": "Markdown",
-#             "reply_markup": {"inline_keyboard": inline_keyboard},
-#         }
-#         if append is False:
-#             params["message_id"] = message_id
-#         return (
-#             {"method": "editMessageText", "params": params}
-#             if append is False
-#             else params
-#         )
+#             4️⃣ **Responsibilities:**
+#             • We are committed to delivering products intact and on time.
+#             • The user is responsible for the accuracy of the information they provide.
+#             • Any form of fraud will result in being banned from the service.
+
+#             5️⃣ **Support:**
+#             • Support is available to you.
+#             • Response time: up to 2 hours.
+#             • Support contact: @TestSupport.
+
+#             ⚠️ **Note:** By using this service, you accept all of the above terms.
+#             """
+#         ),
+#         "parse_mode": "Markdown",
+#         "reply_markup": {"inline_keyboard": inline_keyboard},
+#     }
+#     if append is False:
+#         params["message_id"] = message_id
+#     return (
+#         {"method": "editMessageText", "params": params}
+#         if append is False
+#         else params
+#     )
 
 #     @staticmethod
 #     def terms_and_conditions(
