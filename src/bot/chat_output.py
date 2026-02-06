@@ -115,37 +115,6 @@ class TelegrambotOutputs:
             **placeholders,
         )
 
-    def _render_with_keyboard(
-        self,
-        db: Session,
-        name: str,
-        chat_id: Union[str, int],
-        inline_keyboard: list[list[dict]],
-        method: str | None = None,
-        message_id: str | int | None = None,
-        **placeholders,
-    ) -> dict:
-        """
-        Render a DB template (editable text) but override reply_markup with a dynamic keyboard.
-        Keeps editMessageText/sendMessage behavior via method/message_id.
-        """
-        payload = self._render(
-            db=db,
-            name=name,
-            chat_id=chat_id,
-            method=method,
-            message_id=message_id,
-            **placeholders,
-        )
-
-        if method is None:
-            payload["reply_markup"] = {"inline_keyboard": inline_keyboard}
-            return payload
-
-        # method wrapper
-        payload["params"]["reply_markup"] = {"inline_keyboard": inline_keyboard}
-        return payload
-
     def _render_with_keyboard_append_template(
         self,
         db: Session,
@@ -295,27 +264,21 @@ class TelegrambotOutputs:
 
         prices_block = _t("\n".join(lines))
 
-        keyboard = [
-            [{"text": "return to main menu", "callback_data": "return_to_menu"}],
-        ]
-
         if append:
-            return self._render_with_keyboard(
+            return self._render(
                 db=db,
                 name="get_prices",
                 chat_id=chat_id,
-                inline_keyboard=keyboard,
                 prices_block=prices_block,
             )
 
         if message_id is None:
             raise ValueError("message_id can't be None when append is False")
 
-        return self._render_with_keyboard(
+        return self._render(
             db=db,
             name="get_prices",
             chat_id=chat_id,
-            inline_keyboard=keyboard,
             method="editMessageText",
             message_id=message_id,
             prices_block=prices_block,
