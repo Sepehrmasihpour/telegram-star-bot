@@ -70,9 +70,7 @@ def process_callback_query(
             return bot_output.empty_answer_callback(query_id)
 
         if query_data == "show_terms_for_acceptance":
-            if chat.accepted_terms is True:
-                return bot_output.empty_answer_callback(query_id)
-            return bot_output.show_terms_condititons(chat_id, message_id, form=True)
+            return bot_output.show_terms_condititons(chat_id, message_id)
 
         if query_data == "read_the_terms":
             return bot_output.terms_and_conditions(chat_id, message_id)
