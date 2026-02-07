@@ -1,5 +1,11 @@
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import Integer, String, UniqueConstraint, ForeignKey, Enum as SAEnum
+from sqlalchemy import (
+    Integer,
+    String,
+    UniqueConstraint,
+    ForeignKey,
+    Enum as SAEnum,
+)
 from src.db.base import Base
 from enum import Enum
 
@@ -60,10 +66,11 @@ class ButtonIndex(Base):
 class Button(Base):
     __tablename__ = "buttons"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     text: Mapped[str] = mapped_column(String(600), nullable=False)
     callback_data: Mapped[str] = mapped_column(String(500), nullable=False)
     button_indexes: Mapped[list["ButtonIndex"]] = relationship(
         "ButtonIndex",
         back_populates="button",
     )
+    __table_args__ = (UniqueConstraint("name", name="uq_button_name"),)

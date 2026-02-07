@@ -32,7 +32,7 @@ def _fill_placeholders(text: str, **fields: str) -> str:
 def _map_buttons_in_order(
     chat_output: ChatOutput,
     row_size: int = 1,
-    button_url: Optional[str] = None,
+    map_url: Optional[Dict[str, str]] = None,
     **placeholders,
 ) -> list[list[dict]]:
     buttons = sorted(chat_output.button_indexes, key=lambda bi: bi.number)
@@ -40,18 +40,19 @@ def _map_buttons_in_order(
     rendered = []
     for bi in buttons:
         btn = bi.button
-        rendered.append(
-            {
-                "text": _fill_placeholders(btn.text, **placeholders),
-                "callback_data": _fill_placeholders(btn.callback_data, **placeholders),
-            }
-            if button_url is None
-            else {
-                "text": _fill_placeholders(btn.text, **placeholders),
-                "callback_data": _fill_placeholders(btn.callback_data, **placeholders),
-                "url": button_url,
-            }
-        )
+        item = {
+            "text": _fill_placeholders(btn.text, **placeholders),
+        }
+
+        # if this button name is in url_map, render url button
+        if map_url and btn.name in map_url:
+            item["url"] = map_url[btn.name]
+        else:
+            item["callback_data"] = _fill_placeholders(
+                btn.callback_data, **placeholders
+            )
+
+        rendered.append(item)
 
     return [rendered[i : i + row_size] for i in range(0, len(rendered), row_size)]
 
@@ -62,7 +63,7 @@ def _render_chat_outputs(
     row_size: int = 1,
     message_id: Optional[Union[str, int]] = None,
     method: Optional[str] = None,
-    button_url: Optional[str] = None,
+    map_url: Optional[Dict[str, str]] = None,
     **placeholders,
 ) -> dict:
     """
@@ -72,12 +73,15 @@ def _render_chat_outputs(
     # Normalize text
     raw_text = _t(template.text)
 
+    # assert wether or not the placeholders are allowed or not
+    _assert_placeholders_allowed(template=template, text=raw_text)
+
     # Fill placeholders
     rendered_text = _fill_placeholders(raw_text, **placeholders)
 
     # Render buttons
     keyboard = _map_buttons_in_order(
-        chat_output=template, row_size=row_size, button_url=button_url, **placeholders
+        chat_output=template, row_size=row_size, map_url=map_url, **placeholders
     )
     params = {
         "chat_id": chat_id,
@@ -90,6 +94,17 @@ def _render_chat_outputs(
         params["reply_markup"] = {"inline_keyboard": keyboard}
 
     return params if method is None else {"method": method, "params": params}
+
+
+def _assert_placeholders_allowed(template: ChatOutput, text: str):
+    allowed = {p.name for p in (template.placeholders or [])}
+    used = set(PLACEHOLDER_RE.findall(text))
+    illegal = used - allowed
+    if illegal:
+        raise ValueError(
+            f"Template '{template.name}' uses unknown placeholders: {illegal}. "
+            f"Allowed: {sorted(allowed)}"
+        )
 
 
 EMOJI_PAIRINGS = {"Premium Stars Pack": "🌟", "Telegram Premium Upgrade": "💎"}
@@ -112,9 +127,9 @@ class TelegrambotOutputs:
         db: Session,
         name: str,
         chat_id: Union[str, int],
+        map_url: Optional[Dict[str, str]] = None,
         method: Optional[str] = None,
         message_id: Optional[Union[str, int]] = None,
-        button_url: Optional[str] = None,
         **placeholders,
     ):
         template = self._get_template(db, name=name)
@@ -123,7 +138,7 @@ class TelegrambotOutputs:
             chat_id=chat_id,
             method=method,
             message_id=message_id,
-            button_url=button_url,
+            map_url=map_url,
             **placeholders,
         )
 
@@ -134,6 +149,7 @@ class TelegrambotOutputs:
         chat_id: Union[str, int],
         dynamic_keyboard: list[list[dict]],
         row_size: int = 1,
+        map_url: Dict[str, str] = None,
         method: str | None = None,
         message_id: str | int | None = None,
         **placeholders,
@@ -153,6 +169,7 @@ class TelegrambotOutputs:
             row_size=row_size,
             method=method,
             message_id=message_id,
+            map_url=map_url,
             **placeholders,
         )
 
@@ -388,8 +405,9 @@ class TelegrambotOutputs:
             chat_id=chat_id,
             product_name=product_name,
             amount=amount,
-            button_url=pay_url,
+            pay_url=pay_url,
             order_id=order_id,
+            url_map={"btn_pay_invoice": pay_url},
         )
 
     def payment_confirmed(
