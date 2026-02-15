@@ -35,15 +35,13 @@ class Placeholder(Base):
     chat_output_id: Mapped[int] = mapped_column(
         ForeignKey("chat_outputs.id", ondelete="CASCADE")
     )
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     type: Mapped[PlaceHolderTypes] = mapped_column(
         SAEnum(PlaceHolderTypes),
         nullable=False,
     )
     chat_output: Mapped["ChatOutput"] = relationship(back_populates="placeholders")
-    __table_args__ = (
-        UniqueConstraint("chat_output_id", "name", name="uq_placeholder_per_output"),
-    )
+    __table_args__ = (UniqueConstraint("name", name="uq_placeholder_name"),)
 
 
 class ButtonIndex(Base):
