@@ -4,7 +4,7 @@ from src.models.market_feed import MarketFeed
 from src.models.order import Order, OrderItem
 from src.models.products import Product, ProductVersion
 from src.models.user import User
-from src.models.chat_outputs import ChatOutput, Placeholder, Button
+from src.models.chat_outputs import ChatOutput, Placeholder, Button, ButtonIndex
 
 
 # Alembic needs Base.metadata to see models
@@ -20,4 +20,5 @@ __all__ = [
     "ChatOutput",
     "Placeholder",
     "Button",
+    "ButtonIndex",
 ]
