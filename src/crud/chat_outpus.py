@@ -1,13 +1,10 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
-from typing import Sequence
-
 from src.models import ChatOutput, Button, ButtonIndex, Placeholder
 from src.models.chat_outputs import PlaceHolderTypes
-from src.config import logger
 
-from dataclasses import dataclass
+from src.config import logger
 
 
 def create_button(db: Session, name: str, text: str, callback_data: str):
@@ -51,4 +48,28 @@ def create_chat_output(db: Session, name: str, text: str):
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_chat_output crud operation failed:{e}")
+        raise
+
+
+def get_chat_output_by_name(db: Session, name: str):
+    try:
+        return db.query(ChatOutput).filter(ChatOutput.name == name).first()
+    except SQLAlchemyError as e:
+        logger.error(f"get_chat_output_by_name crud operatioin failed:{e}")
+        raise
+
+
+def get_button_by_name(db: Session, name: str):
+    try:
+        return db.query(Button).filter(Button.name == name).first()
+    except SQLAlchemyError as e:
+        logger.error(f"get_button_by_name crud operatioin failed:{e}")
+        raise
+
+
+def get_placeholder_by_name(db: Session, name: str):
+    try:
+        return db.query(Placeholder).filter(Placeholder.name == name).first()
+    except SQLAlchemyError as e:
+        logger.error(f"get_placeholder_by_name crud operatioin failed:{e}")
         raise
