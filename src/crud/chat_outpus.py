@@ -12,17 +12,21 @@ def create_button(db: Session, name: str, text: str, callback_data: str):
         button = Button(name=name, text=text, callback_data=callback_data)
         db.add(button)
         db.refresh()
+        return button
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_button crud operation failed:{e}")
         raise
 
 
-def create_button_index(db: Session, chat_output_id: int, button_id):
+def create_button_index(db: Session, chat_output_id: int, button_id: int, number: int):
     try:
-        button_index = ButtonIndex(chat_output_id=chat_output_id, button_id=button_id)
+        button_index = ButtonIndex(
+            chat_output_id=chat_output_id, button_id=button_id, number=number
+        )
         db.add(button_index)
         db.refresh()
+        return button_index
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_button_index crud opeeration failed:{e}")
@@ -32,9 +36,10 @@ def create_placeholder(
     db: Session, chat_output_id: int, name: str, type: PlaceHolderTypes
 ):
     try:
-        palceholder = Placeholder(chat_output_id=chat_output_id, name=name, type=type)
-        db.add(palceholder)
+        placeholder = Placeholder(chat_output_id=chat_output_id, name=name, type=type)
+        db.add(placeholder)
         db.refresh()
+        return placeholder
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_placeholder crud operation failed:{e}")
@@ -45,6 +50,7 @@ def create_chat_output(db: Session, name: str, text: str):
         chat_output = ChatOutput(name=name, text=text)
         db.add(chat_output)
         db.refresh()
+        return chat_output
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_chat_output crud operation failed:{e}")

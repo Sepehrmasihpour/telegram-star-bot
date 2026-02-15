@@ -1,8 +1,17 @@
 # src/db/seed.py
 from sqlalchemy.orm import Session
-from src.models import Product, ProductVersion, ChatOutput, Placeholder, Button
+from src.models import Product, ProductVersion
 from src.config import logger
-from src.crud.chat_outpus import create_chat_output_instance_with_placeholder_and_button
+from typing import Dict
+from src.crud.chat_outpus import (
+    create_button,
+    create_button_index,
+    create_chat_output,
+    create_placeholder,
+    get_button_by_name,
+    get_chat_output_by_name,
+    get_placeholder_by_name,
+)
 
 
 def seed_initial_products(db: Session) -> None:
@@ -72,6 +81,50 @@ def seed_initial_products(db: Session) -> None:
 
 # TODO
 # it should chech weather the instance exists or not if yes skip
-def seed_initial_chat_outputs(
-    db: Session,
-) -> None: ...
+def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
+    try:
+        buttons = seed_data.get("buttons")
+        for button in buttons:
+            name = button.get("name")
+            button_exists = get_button_by_name(db=db, name=name)
+            if button_exists is None:
+                create_button(
+                    db=db,
+                    name=name,
+                    text=button.get("text"),
+                    callback_data=button.get("callback_data"),
+                )
+        chat_outputs = seed_data.get("chat_outputs")
+        for chat_output in chat_outputs:
+            name = chat_output.get("name")
+            chat_output_exists = get_chat_output_by_name(db=db, name=name)
+            if chat_output_exists is not None:
+                pass
+            chat_output_data = create_chat_output(
+                db=db, name=name, text=chat_output.get("text")
+            )
+            placeholders = chat_output.get("placeholders")
+            for placeholder in placeholders:
+                placeholder_exists = get_placeholder_by_name(
+                    db=db, name=placeholder.get("name")
+                )
+                if placeholder_exists is not None:
+                    pass
+                create_placeholder(
+                    db=db,
+                    chat_output_id=chat_output_data.id,
+                    name=placeholder.get("name"),
+                    type=placeholder.get("type"),
+                )
+            buttons = chat_output.get("buttons")
+            for button in buttons:
+                button_data = get_button_by_name(db=db, name=button.get("name"))
+                create_button_index(
+                    db=db,
+                    chat_output_id=chat_output_data.id,
+                    button_id=button_data.id,
+                    number=button.get("number"),
+                )
+
+    except Exception as e:
+        logger.error(f"seed_initial_chat_outputs failed:{e}")
