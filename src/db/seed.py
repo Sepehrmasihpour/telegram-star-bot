@@ -79,8 +79,6 @@ def seed_initial_products(db: Session) -> None:
     logger.info("Dummy product data seeded successfully.")
 
 
-# TODO
-# it should chech weather the instance exists or not if yes skip
 def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
     try:
         buttons = seed_data.get("buttons")
@@ -93,6 +91,7 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
                     name=name,
                     text=button.get("text"),
                     callback_data=button.get("callback_data"),
+                    commit=False,
                 )
         chat_outputs = seed_data.get("chat_outputs")
         for chat_output in chat_outputs:
@@ -101,30 +100,32 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
             if chat_output_exists is not None:
                 continue
             chat_output_data = create_chat_output(
-                db=db, name=name, text=chat_output.get("text")
+                db=db, name=name, text=chat_output.get("text"), commit=False
             )
             placeholders = chat_output.get("placeholders")
             for placeholder in placeholders:
-                placeholder_exists = get_placeholder_by_name(
-                    db=db, name=placeholder.get("name")
-                )
-                if placeholder_exists is not None:
-                    pass
                 create_placeholder(
                     db=db,
                     chat_output_id=chat_output_data.id,
                     name=placeholder.get("name"),
                     type=placeholder.get("type"),
+                    commit=False,
                 )
             buttons = chat_output.get("buttons")
             for button in buttons:
                 button_data = get_button_by_name(db=db, name=button.get("name"))
+                if button_data is None:
+                    raise ValueError(
+                        f"Seeder references unknown button: {button['name']}"
+                    )
                 create_button_index(
                     db=db,
                     chat_output_id=chat_output_data.id,
                     button_id=button_data.id,
                     number=button.get("number"),
+                    commit=False,
                 )
+        db.commit()
 
     except Exception as e:
         logger.error(f"seed_initial_chat_outputs failed:{e}")
