@@ -10,7 +10,6 @@ from src.crud.chat_outpus import (
     create_placeholder,
     get_button_by_name,
     get_chat_output_by_name,
-    get_placeholder_by_name,
 )
 
 

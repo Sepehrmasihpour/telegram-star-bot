@@ -17,6 +17,7 @@ from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_
 from src.bot.webhook import set_webhook, delete_webhook
 from src.bot.dispathcer import dispatch_response
 from src.db.seed import seed_initial_products, seed_initial_chat_outputs
+from src.db.seed_data import SEED_TELEGRAM_OUTPUTS
 from src.crud.order import update_order
 
 from sqlalchemy.orm import Session
@@ -83,7 +84,7 @@ async def lifespan(app: FastAPI):
     try:
         db: Session = SessionLocal()
         seed_initial_products(db)
-        seed_initial_chat_outputs(db)
+        seed_initial_chat_outputs(db, seed_data=SEED_TELEGRAM_OUTPUTS)
         db.close()
     except Exception as e:
         logger.error(f"Database seeding failed: {e}")
