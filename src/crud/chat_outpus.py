@@ -7,11 +7,16 @@ from src.models.chat_outputs import PlaceHolderTypes
 from src.config import logger
 
 
-def create_button(db: Session, name: str, text: str, callback_data: str):
+def create_button(
+    db: Session, name: str, text: str, callback_data: str, commit: bool = True
+):
     try:
         button = Button(name=name, text=text, callback_data=callback_data)
         db.add(button)
-        db.refresh()
+        db.flush()
+        if commit:
+            db.commit()
+            db.refresh(button)
         return button
     except SQLAlchemyError as e:
         db.rollback()
@@ -19,37 +24,53 @@ def create_button(db: Session, name: str, text: str, callback_data: str):
         raise
 
 
-def create_button_index(db: Session, chat_output_id: int, button_id: int, number: int):
+def create_button_index(
+    db: Session, chat_output_id: int, button_id: int, number: int, commit: bool = True
+):
     try:
         button_index = ButtonIndex(
             chat_output_id=chat_output_id, button_id=button_id, number=number
         )
         db.add(button_index)
-        db.refresh()
+        db.flush()
+        if commit:
+            db.commit()
+            db.refresh(button_index)
         return button_index
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_button_index crud opeeration failed:{e}")
+        raise
 
 
 def create_placeholder(
-    db: Session, chat_output_id: int, name: str, type: PlaceHolderTypes
+    db: Session,
+    chat_output_id: int,
+    name: str,
+    type: PlaceHolderTypes,
+    commit: bool = True,
 ):
     try:
         placeholder = Placeholder(chat_output_id=chat_output_id, name=name, type=type)
         db.add(placeholder)
-        db.refresh()
+        db.flush()
+        if commit:
+            db.commit()
+            db.refresh(placeholder)
         return placeholder
     except SQLAlchemyError as e:
         db.rollback()
         logger.error(f"create_placeholder crud operation failed:{e}")
 
 
-def create_chat_output(db: Session, name: str, text: str):
+def create_chat_output(db: Session, name: str, text: str, commit: bool = True):
     try:
         chat_output = ChatOutput(name=name, text=text)
         db.add(chat_output)
-        db.refresh()
+        db.flush()
+        if commit:
+            db.commit()
+            db.refresh(chat_output)
         return chat_output
     except SQLAlchemyError as e:
         db.rollback()

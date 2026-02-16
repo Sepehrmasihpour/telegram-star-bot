@@ -99,7 +99,7 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
             name = chat_output.get("name")
             chat_output_exists = get_chat_output_by_name(db=db, name=name)
             if chat_output_exists is not None:
-                pass
+                continue
             chat_output_data = create_chat_output(
                 db=db, name=name, text=chat_output.get("text")
             )
