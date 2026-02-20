@@ -7,7 +7,10 @@ from typing import Optional
 from decimal import Decimal
 from typing import Any
 from sqlalchemy.orm import Session
-from src.crud.chat_outpus import get_chat_output_by_name
+from src.crud.chat_outpus import get_chat_output_by_name, update_chat_output_by_name
+
+
+#! There needs to be alot of debugging and logging done here.
 
 
 def _t(s: str) -> str:
@@ -200,6 +203,11 @@ class TelegrambotOutputs:
                 "message": message,
             },
         }
+
+    #! this especially needs some debugging and logging feautures
+    def update_template(self, db: Session, name: str, **fields):
+        updated_template = update_chat_output_by_name(db=db, name=name, fields=fields)
+        self._chat_output_cache[name] = updated_template
 
     def unsupported_command(self, db: Session, chat_id: Union[str, int]):
         return self._render(db=db, name="unsupported_command", chat_id=chat_id)

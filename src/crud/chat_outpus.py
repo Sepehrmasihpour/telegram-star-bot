@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -99,4 +101,27 @@ def get_placeholder_by_name(db: Session, name: str):
         return db.query(Placeholder).filter(Placeholder.name == name).first()
     except SQLAlchemyError as e:
         logger.error(f"get_placeholder_by_name crud operatioin failed:{e}")
+        raise
+
+
+def update_chat_output_by_name(
+    db: Session, name: str, commit: bool = True, **fields: Any
+) -> ChatOutput:
+    try:
+        output = db.query(ChatOutput).filter(ChatOutput.name == name).first()
+        if output is None:
+            logger.info(f"update_chat_output_by_name: no output by this name: {name}")
+            return None
+
+        for key, value in fields.items():
+            if hasattr(output, key):
+                setattr(output, key, value)
+            else:
+                raise AttributeError(f"output has no attribute '{key}")
+        if commit:
+            db.commit()
+            db.refresh(output)
+        return output
+    except SQLAlchemyError as e:
+        logger.error(f"update_chat_output_by_name failed: {e}")
         raise
