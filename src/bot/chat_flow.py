@@ -253,7 +253,6 @@ def is_last_message(
 
 
 def get_prices(
-    outputs: TelegrambotOutputs,
     db: Session,
 ) -> Dict[str, Any]:
     try:
@@ -324,9 +323,7 @@ def crypto_payment(
 ): ...
 
 
-def get_product_prices(
-    outputs: TelegrambotOutputs, db: Session, product: Product
-) -> Dict[str, Any]:
+def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
     try:
         version_map: Dict[str, Decimal | str] = {}
         for version in product.versions:
@@ -339,5 +336,5 @@ def get_product_prices(
         raise
 
 
-def phone_number_authenticator(outputs: TelegrambotOutputs, phone: str) -> bool:
+def phone_number_authenticator(phone: str) -> bool:
     return bool(_PHONE_PATTERN.match(phone))
