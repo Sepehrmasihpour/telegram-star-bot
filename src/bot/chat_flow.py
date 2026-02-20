@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import select
 from src.models import Chat, Product
 
-from src.bot.chat_output import telegram_process_bot_outputs as bot_output
 from src.bot import TgChat
 from src.bot.chat_output import TelegrambotOutputs
 
@@ -24,8 +23,8 @@ _PHONE_PATTERN = re.compile(r"^09\d{9}$")
 
 
 def chat_first_level_authentication(
-    db: Session,
     outputs: TelegrambotOutputs,
+    db: Session,
     data: Optional[TgChat] = None,
     chat_db: Optional[Chat] = None,
 ) -> Dict[str, Any] | bool:
@@ -51,18 +50,20 @@ def chat_first_level_authentication(
         raise
 
 
-def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | bool:
+def chat_second_lvl_authentication(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat
+) -> Dict[str, Any] | bool:
     try:
         if chat.chat_verified is not True:
             user = chat.user
             if not user.phone_number:
                 user.update_chat(db, chat.id, pending_action="waiting_for_phone_number")
-                return bot_output.phone_number_input(chat.chat_id)
+                return outputs.phone_number_input(chat.chat_id)
             if not user.phone_number_validated:
-                return bot_output.phone_number_verfication_needed(
+                return outputs.phone_number_verfication_needed(
                     chat.chat_id, phone_number=user.phone_number
                 )
-            return bot_output.chat_verification_needed(
+            return outputs.chat_verification_needed(
                 chat_id=chat.chat_id, phone_number=user.phone_number
             )
 
@@ -72,12 +73,14 @@ def chat_second_lvl_authentication(db: Session, chat: Chat) -> Dict[str, Any] | 
         raise
 
 
-def buy_product(db: Session, chat: Chat, product_id: int) -> Dict | None:
+def buy_product(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, product_id: int
+) -> Dict | None:
     try:
 
         product = get_product_by_id(db=db, id=product_id)
         versions_prices = get_product_prices(db=db, product=product)
-        return bot_output.buy_product(
+        return outputs.buy_product(
             chat_id=chat.chat_id,
             product=product,
             versions_prices=versions_prices,
@@ -87,7 +90,7 @@ def buy_product(db: Session, chat: Chat, product_id: int) -> Dict | None:
         raise
 
 
-def edit_phone_number(db: Session, chat: Chat):
+def edit_phone_number(outputs: TelegrambotOutputs, db: Session, chat: Chat):
     try:
 
         user.update_chat(
@@ -96,14 +99,14 @@ def edit_phone_number(db: Session, chat: Chat):
             chat_verified=False,
             pending_action="waiting_for_phone_number",
         )
-        return bot_output.phone_number_input(chat_id=chat.chat_id)
+        return outputs.phone_number_input(chat_id=chat.chat_id)
     except Exception as e:
         logger.error(f"edit_phone_number at chat flow failed:{e}")
         raise
 
 
 def buy_product_version(
-    db: Session, chat: Chat, product_version_id: int
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, product_version_id: int
 ) -> Dict | None:
     try:
         auth = chat_second_lvl_authentication(db=db, chat=chat)
@@ -117,7 +120,7 @@ def buy_product_version(
             items=[order.CreateOrderItemIn(product_version_id=int(product_version_id))],
             commit=True,
         )
-        return bot_output.buy_product_version(
+        return outputs.buy_product_version(
             chat_id=chat.chat_id,
             product_version=product_version,
             price=product_version_price,
@@ -128,7 +131,9 @@ def buy_product_version(
         raise
 
 
-def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
+def phone_number_input(
+    outputs: TelegrambotOutputs, db: Session, phone_number: str, chat_data: Chat
+):
     try:
         valid_phone_number = phone_number_authenticator(phone_number)
         if not valid_phone_number:
@@ -137,16 +142,16 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
                 user.update_chat(
                     db, chat_data.id, phone_input_attempt=0, pending_action=None
                 )
-                return bot_output.max_attempt_reached(chat_data.chat_id)
+                return outputs.max_attempt_reached(chat_data.chat_id)
             user.update_chat(db, chat_data.id, phone_input_attempt=attempts + 1)
-            return bot_output.invalid_phone_number(chat_data.chat_id)
+            return outputs.invalid_phone_number(chat_data.chat_id)
         user_with_the_same_phone = user.get_user_by_phone(db, phone_number=phone_number)
         if (
             user_with_the_same_phone
             and chat_data.user_id != user_with_the_same_phone.id
         ):
             user.update_chat(db=db, chat_id_pk=chat_data.id, pending_action=None)
-            return bot_output.login_to_acount(
+            return outputs.login_to_acount(
                 chat_id=chat_data.chat_id, phone_number=phone_number
             )
         updated_chat = user.update_chat(
@@ -160,12 +165,12 @@ def phone_number_input(db: Session, phone_number: str, chat_data: Chat):
         raise
 
 
-def login(db: Session, chat: Chat, phone_number: str):
+def login(outputs: TelegrambotOutputs, db: Session, chat: Chat, phone_number: str):
     try:
 
         user_to_login_to = user.get_user_by_phone(db=db, phone_number=phone_number)
         if chat.user.id == user_to_login_to.id:
-            return bot_output.already_logged_in(
+            return outputs.already_logged_in(
                 chat_id=chat.chat_id, phone_number=phone_number
             )
 
@@ -178,18 +183,18 @@ def login(db: Session, chat: Chat, phone_number: str):
         raise
 
 
-def send_otp(db: Session, chat: Chat):
+def send_otp(outputs: TelegrambotOutputs, db: Session, chat: Chat):
     try:
 
         #! this is a placeholder for when we actually send the otp
         user.update_chat(db=db, chat_id_pk=chat.id, pending_action="waiting_for_otp")
-        return bot_output.phone_numebr_verification(chat_id=chat.chat_id)
+        return outputs.phone_numebr_verification(chat_id=chat.chat_id)
     except Exception as e:
         logger.error(f"send_otp at chat flow failed:{e}")
         raise
 
 
-def otp_verify(db: Session, text: str, chat: Chat):
+def otp_verify(outputs: TelegrambotOutputs, db: Session, text: str, chat: Chat):
     try:
 
         if not text == "1111":  #!This is very much a place holder for later
@@ -198,9 +203,9 @@ def otp_verify(db: Session, text: str, chat: Chat):
                 user.update_chat(
                     db=db, chat_id_pk=chat.id, otp_input_attempt=0, pending_action=None
                 )
-                return bot_output.max_attempt_reached(chat_id=chat.chat_id)
+                return outputs.max_attempt_reached(chat_id=chat.chat_id)
             user.update_chat(db=db, chat_id_pk=chat.id, otp_input_attempt=attemps + 1)
-            return bot_output.invalid_otp(chat.chat_id)
+            return outputs.invalid_otp(chat.chat_id)
         user.update_chat(
             db=db,
             chat_id_pk=chat.id,
@@ -209,13 +214,14 @@ def otp_verify(db: Session, text: str, chat: Chat):
             chat_verified=True,
         )
         user.update_user(db=db, user_id=chat.user_id, phone_number_validated=True)
-        return bot_output.phone_number_verified(chat.chat_id)
+        return outputs.phone_number_verified(chat.chat_id)
     except Exception as e:
         logger.error(f"otp_verify at chat flow failed: {e}")
         raise
 
 
 def is_last_message(
+    outputs: TelegrambotOutputs,
     message_id: Union[str, int],
     db: Session,
     chat: Optional[Chat] = None,
@@ -247,6 +253,7 @@ def is_last_message(
 
 
 def get_prices(
+    outputs: TelegrambotOutputs,
     db: Session,
 ) -> Dict[str, Any]:
     try:
@@ -274,7 +281,9 @@ def get_prices(
         raise
 
 
-def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
+def payment_gateway(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, order_id: Union[str, int]
+):
     try:
         order_data = order.get_order(db=db, order_id=order_id)
         order_item = order.items[0]
@@ -282,7 +291,7 @@ def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
         unit_price = order_item.unit_price
         product_version = get_product_version_by_id(db=db, id=product_version_id)
         product_name = product_version.product.name
-        return bot_output.payment_gateway(
+        return outputs.payment_gateway(
             chat_id=chat.chat_id,
             order_id=order_data.id,
             product_name=product_name,
@@ -294,22 +303,30 @@ def payment_gateway(db: Session, chat: Chat, order_id: Union[str, int]):
         raise
 
 
-def cancel_order(db: Session, chat: Chat, order_id: Union[int, str]):
+def cancel_order(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, order_id: Union[int, str]
+):
     order.delete_order(db=db, order_id=order_id)
-    return bot_output.return_to_menu(chat_id=chat.chat_id)
+    return outputs.return_to_menu(chat_id=chat.chat_id)
 
 
-def confirm_payment(db: Session, chat: Chat, order_id: Union[int, str]):
+def confirm_payment(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, order_id: Union[int, str]
+):
     order_data = order.get_order(db=db, order_id=order_id)
     if order_data.status != "paid":
-        return bot_output.payment_confirmed(chat_id=chat.chat_id, order_id=order_id)
-    return bot_output.payment_not_confirmed(chat_id=chat.chat_id, order_id=order_id)
+        return outputs.payment_confirmed(chat_id=chat.chat_id, order_id=order_id)
+    return outputs.payment_not_confirmed(chat_id=chat.chat_id, order_id=order_id)
 
 
-def crypto_payment(db: Session, chat: Chat, order_id: Union[str, int]): ...
+def crypto_payment(
+    outputs: TelegrambotOutputs, db: Session, chat: Chat, order_id: Union[str, int]
+): ...
 
 
-def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
+def get_product_prices(
+    outputs: TelegrambotOutputs, db: Session, product: Product
+) -> Dict[str, Any]:
     try:
         version_map: Dict[str, Decimal | str] = {}
         for version in product.versions:
@@ -322,5 +339,5 @@ def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
         raise
 
 
-def phone_number_authenticator(phone: str) -> bool:
+def phone_number_authenticator(outputs: TelegrambotOutputs, phone: str) -> bool:
     return bool(_PHONE_PATTERN.match(phone))
