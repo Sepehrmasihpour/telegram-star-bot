@@ -4,21 +4,7 @@ from src.config import logger
 from src.bot.chat_output import TelegrambotOutputs
 from src.bot import TgChat, NotPrivateChat, UnsuportedTextInput
 from src.crud.products import get_products
-from src.bot.chat_flow import (
-    chat_first_level_authentication,
-    is_last_message,
-    phone_number_input,
-    otp_verify,
-    buy_product_version,
-    buy_product,
-    edit_phone_number,
-    send_otp,
-    login,
-    cancel_order,
-    crypto_payment,
-    payment_gateway,
-    confirm_payment,
-)
+from src.bot import chat_flow
 from src.crud.user import (
     get_chat_by_chat_id,
     update_chat_by_chat_id,
@@ -78,7 +64,9 @@ def process_callback_query(
 ):
     try:
         chat = get_chat_by_chat_id(db, chat_id)
-        last_message = is_last_message(message_id=message_id, db=db, chat=chat)
+        last_message = chat_flow.is_last_message(
+            message_id=message_id, db=db, chat=chat
+        )
 
         if chat.pending_action is not None:
             return outputs.empty_answer_callback(query_id)
@@ -149,20 +137,20 @@ def process_callback_query(
             )
 
         if query_data == "edit_phone_number":
-            return edit_phone_number(db=db, chat=chat, outputs=outputs)
+            return chat_flow.edit_phone_number(db=db, chat=chat, outputs=outputs)
 
         if query_data == "send_validation_code":
-            return send_otp(outputs=outputs, db=db, chat=chat)
+            return chat_flow.send_otp(outputs=outputs, db=db, chat=chat)
 
         if query_data.startswith("buy_product:"):
             _, product_id = query_data.split(":", 1)
-            return buy_product(
+            return chat_flow.buy_product(
                 outputs=outputs, db=db, chat=chat, product_id=int(product_id)
             )
 
         if query_data.startswith("buy_product_version:"):
             _, prodcut_version_id = query_data.split(":", 1)
-            return buy_product_version(
+            return chat_flow.buy_product_version(
                 outputs=outputs,
                 db=db,
                 chat=chat,
@@ -170,23 +158,33 @@ def process_callback_query(
             )
         if query_data.startswith("login_to_acount:"):
             _, phone_number = query_data.split(":", 1)
-            return login(outputs=outputs, db=db, chat=chat, phone_number=phone_number)
+            return chat_flow.login(
+                outputs=outputs, db=db, chat=chat, phone_number=phone_number
+            )
 
         if query_data.startswith("payment_gateway:"):
             _, order_id = query_data.split(":", 1)
-            return payment_gateway(outputs=outputs, db=db, chat=chat, order_id=order_id)
+            return chat_flow.payment_gateway(
+                outputs=outputs, db=db, chat=chat, order_id=order_id
+            )
 
         if query_data.startswith("crypto_payment:"):
             _, order_id = query_data.split(":", 1)
-            return crypto_payment(outputs=outputs, db=db, chat=chat, order_id=order_id)
+            return chat_flow.crypto_payment(
+                outputs=outputs, db=db, chat=chat, order_id=order_id
+            )
 
         if query_data.startswith("cancel_order:"):
             _, order_id = query_data.split(":", 1)
-            return cancel_order(outputs=outputs, db=db, chat=chat, order_id=order_id)
+            return chat_flow.cancel_order(
+                outputs=outputs, db=db, chat=chat, order_id=order_id
+            )
 
         if query_data.startswith("confirm_payment:"):
             _, order_id = query_data.split(":", 1)
-            return confirm_payment(outputs=outputs, db=db, chat=chat, order_id=order_id)
+            return chat_flow.confirm_payment(
+                outputs=outputs, db=db, chat=chat, order_id=order_id
+            )
 
         else:
             logger.error(
@@ -203,7 +201,9 @@ def process_text(
 ) -> Dict[str, Any]:
     try:
         chat_data = get_chat_by_chat_id(db, chat.id)
-        auth = chat_first_level_authentication(db=db, data=chat, chat_db=chat_data)
+        auth = chat_flow.chat_first_level_authentication(
+            db=db, data=chat, chat_db=chat_data, outputs=outputs
+        )
         if auth is not True:
             return auth
         if text == "/start":
@@ -212,11 +212,13 @@ def process_text(
                 products=products, chat_id=chat.id, append=True
             )
         if chat_data.pending_action == "waiting_for_phone_number":
-            return phone_number_input(
+            return chat_flow.phone_number_input(
                 outputs=outputs, db=db, phone_number=text, chat_data=chat_data
             )
         if chat_data.pending_action == "waiting_for_otp":
-            return otp_verify(outputs=outputs, db=db, text=text, chat=chat_data)
+            return chat_flow.otp_verify(
+                outputs=outputs, db=db, text=text, chat=chat_data
+            )
         else:
             raise UnsuportedTextInput("unsupported command or text input")
     except Exception as e:
