@@ -4,12 +4,7 @@ from typing import Any, Dict
 from sqlalchemy.orm import Session
 from src.bot.chat_flow import get_prices
 from src.bot.chat_output import telegram_process_bot_outputs
-from src.clients.telegram import (
-    send_message,
-    edit_messages_text,
-    answer_callback_query,
-    # delete_message,
-)
+from src.clients import telegram
 
 
 async def dispatch_response(
@@ -18,14 +13,14 @@ async def dispatch_response(
     try:
 
         if "method" not in payload:
-            return await send_message(request=request, payload=payload)
+            return await telegram.send_message(request=request, payload=payload)
         method = payload.get("method")
         if method == "answerCallback":
-            return await answer_callback_query(
+            return await telegram.answer_callback_query(
                 request=request, payload=payload.get("params")
             )
         if method == "editMessageText":
-            return await edit_messages_text(
+            return await telegram.edit_messages_text(
                 request=request, payload=payload.get("params")
             )
         if method == "custom":
@@ -42,14 +37,14 @@ async def custom_handler(request: Request, db: Session, payload: Dict[str, Any])
 
         custom = payload.get("custom")
         if custom == "get_prices":
-            await send_message(request, payload=payload.get("message"))
+            await telegram.send_message(request, payload=payload.get("message"))
             prices = get_prices(db)
             logger.debug(f"prices at custom_handler for get_peices : {prices}")
             chat_id = payload.get("chat_id")
             resp = telegram_process_bot_outputs.get_prices(
                 chat_id=chat_id, prices=prices
             )
-            return await send_message(request, payload=resp)
+            return await telegram.send_message(request, payload=resp)
     except Exception as e:
         logger.error(f"custom_handler at dispathcer failed:{e}")
         raise

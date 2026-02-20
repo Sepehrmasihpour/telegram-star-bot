@@ -3,14 +3,7 @@ from sqlalchemy.orm import Session
 from src.models import Product, ProductVersion
 from src.config import logger
 from typing import Dict
-from src.crud.chat_outpus import (
-    create_button,
-    create_button_index,
-    create_chat_output,
-    create_placeholder,
-    get_button_by_name,
-    get_chat_output_by_name,
-)
+from src.crud import chat_outpus
 
 
 def seed_initial_products(db: Session) -> None:
@@ -83,9 +76,9 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
         buttons = seed_data.get("buttons")
         for button in buttons:
             name = button.get("name")
-            button_exists = get_button_by_name(db=db, name=name)
+            button_exists = chat_outpus.get_button_by_name(db=db, name=name)
             if button_exists is None:
-                create_button(
+                chat_outpus.create_button(
                     db=db,
                     name=name,
                     text=button.get("text"),
@@ -95,15 +88,15 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
         chat_outputs = seed_data.get("chat_outputs")
         for chat_output in chat_outputs:
             name = chat_output.get("name")
-            chat_output_exists = get_chat_output_by_name(db=db, name=name)
+            chat_output_exists = chat_outpus.get_chat_output_by_name(db=db, name=name)
             if chat_output_exists is not None:
                 continue
-            chat_output_data = create_chat_output(
+            chat_output_data = chat_outpus.create_chat_output(
                 db=db, name=name, text=chat_output.get("text"), commit=False
             )
             placeholders = chat_output.get("placeholders")
             for placeholder in placeholders:
-                create_placeholder(
+                chat_outpus.create_placeholder(
                     db=db,
                     chat_output_id=chat_output_data.id,
                     name=placeholder.get("name"),
@@ -112,12 +105,14 @@ def seed_initial_chat_outputs(db: Session, seed_data: Dict) -> None:
                 )
             buttons = chat_output.get("buttons")
             for button in buttons:
-                button_data = get_button_by_name(db=db, name=button.get("name"))
+                button_data = chat_outpus.get_button_by_name(
+                    db=db, name=button.get("name")
+                )
                 if button_data is None:
                     raise ValueError(
                         f"Seeder references unknown button: {button['name']}"
                     )
-                create_button_index(
+                chat_outpus.create_button_index(
                     db=db,
                     chat_output_id=chat_output_data.id,
                     button_id=button_data.id,
