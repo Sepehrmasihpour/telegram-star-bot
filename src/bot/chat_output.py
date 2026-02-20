@@ -593,6 +593,3 @@ class TelegrambotOutputs:
                 message_id=message_id,
             )
         )
-
-
-telegram_process_bot_outputs = TelegrambotOutputs()

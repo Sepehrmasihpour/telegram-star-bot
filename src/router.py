@@ -20,6 +20,8 @@ from src.db.seed import seed_initial_products, seed_initial_chat_outputs
 from src.db.seed_data import SEED_TELEGRAM_OUTPUTS
 from src.crud.order import update_order
 
+from src.bot.chat_output import TelegrambotOutputs
+
 from sqlalchemy.orm import Session
 from src.db import get_db, SessionLocal
 
@@ -89,6 +91,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Database seeding failed: {e}")
     # ---- hand control to the app ----
+
+    # ----- init of the telegram chat outputs----#
+    app.state.outputs = TelegrambotOutputs()
     try:
         yield
     finally:
@@ -167,22 +172,29 @@ async def telegram_webhook(request: Request, db: Session = Depends(get_db)):
 
         # 4) route + build reply for message update
         if message is not None:
+            outputs = request.app.state.outputs
             try:
-                response_params = serialize_message(message, db)
+                response_params = serialize_message(
+                    payload=message, db=db, outputs=outputs
+                )
             except Exception as e:
                 logger.error("Serialize_message/route failed: %s", e)
                 return {"ok": False, "error": "serializing message failed"}
-            resp = await dispatch_response(request, db, response_params)
+            resp = await dispatch_response(
+                request=request, db=db, payload=response_params
+            )
             return resp
         if callback_query is not None:
             try:
                 response_params = serialize_callback_query(
-                    payload=callback_query, db=db
+                    payload=callback_query, db=db, outputs=outputs
                 )
             except Exception as e:
                 logger.error("seraializing_callback_query failed: %s", e)
                 return {"ok": False, "error": "serializing callback failed"}
-            resp = await dispatch_response(request, db, response_params)
+            resp = await dispatch_response(
+                request=request, db=db, payload=response_params
+            )
             return resp
 
         if message is None and callback_query is None:
