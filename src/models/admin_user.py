@@ -18,6 +18,6 @@ class AdminUser(Base):
     sheba_number_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
-    name: Mapped[str] = mapped_column(String(50), nullable=False)
-    last_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(50), nullable=True)
+    last_name: Mapped[str] = mapped_column(String(50), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
