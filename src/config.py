@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # Tunneling specifics
     ngrok_token: str | None = None
-    endpoint: str = "/telegram-webhook"
+    endpoint: str = "telegram/telegram-webhook"
 
     # Webhook specifics
     webhook: HttpUrl | None = None
