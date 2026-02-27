@@ -10,7 +10,7 @@ class AdminUser(Base):
     phone_number_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
-    national_id: Mapped[str] = mapped_column(String(10), nullable=False, unique=True)
+    national_id: Mapped[str] = mapped_column(String(10), nullable=True, unique=True)
     national_id_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
@@ -18,6 +18,7 @@ class AdminUser(Base):
     sheba_number_validated: Mapped[bool] = mapped_column(
         Boolean, nullable=False, server_default="false"
     )
-    name: Mapped[str] = mapped_column(String(50), nullable=True)
-    last_name: Mapped[str] = mapped_column(String(50), nullable=True)
+    full_nane: Mapped[str] = mapped_column(String(200), nullable=False)
+
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    otp_token: Mapped[str] = mapped_column(String(255), nullable=False)
