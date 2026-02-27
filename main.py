@@ -1,28 +1,19 @@
 import uvicorn
-from fastapi import FastAPI
-
-
-from contextlib import asynccontextmanager
-
-from src.config import settings
-
-from src.routers import auth, health, payment, telegram
-
-
-from urllib.parse import urljoin
-from typing import Optional
-
 import httpx
 
-from src.config import logger
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from urllib.parse import urljoin
+from sqlalchemy.orm import Session
+from typing import Optional
+
+from src.routers import auth, health, payment, telegram, bot
+from src.config import settings, logger
 from src.tunnel import start_ngrok_tunnel, stop_ngrok_tunnel, get_current_ngrok_url
 from src.bot.webhook import set_webhook, delete_webhook
+from src.bot.chat_output import TelegrambotOutputs
 from src.db.seed import seed_initial_products, seed_initial_chat_outputs
 from src.db.seed_data import SEED_TELEGRAM_OUTPUTS
-
-from src.bot.chat_output import TelegrambotOutputs
-
-from sqlalchemy.orm import Session
 from src.db import SessionLocal
 
 
@@ -116,9 +107,10 @@ app = FastAPI(
 )
 
 app.include_router(health.router, prefix="/health", tags=["Health"])
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
-app.include_router(telegram.router, prefix="/telegram", tags=["telegram"])
-app.include_router(payment.router, prefix="/payment", tags=["payment"])
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(telegram.router, prefix="/telegram", tags=["Telegram"])
+app.include_router(payment.router, prefix="/payment", tags=["Payment"])
+app.include_router(bot.router, prefix="/bot", tags=["Bot"])
 
 if __name__ == "__main__":
     uvicorn.run(app=app, host=settings.host, port=settings.port.value)

@@ -8,10 +8,17 @@ from src.config import logger
 
 
 def create_admin_user(
-    db: Session, *, phone_number: str, password_hash: str, commit: bool = True
+    db: Session,
+    *,
+    phone_number: str,
+    password_hash: str,
+    otp_token: str,
+    commit: bool = True,
 ) -> AdminUser:
     try:
-        admin_user = AdminUser(phone_number=phone_number, password_hash=password_hash)
+        admin_user = AdminUser(
+            phone_number=phone_number, password_hash=password_hash, otp_token=otp_token
+        )
         db.add(admin_user)
         db.flush()
         if commit:
