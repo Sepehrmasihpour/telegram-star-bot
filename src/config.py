@@ -47,6 +47,9 @@ class Settings(BaseSettings):
 
     db_url: str
 
+    jwt_secret: str
+    jwt_token_expirty_per_seconds: int = 480
+
     # Tunneling specifics
     ngrok_token: str | None = None
     endpoint: str = "telegram/telegram-webhook"

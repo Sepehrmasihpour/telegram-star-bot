@@ -12,12 +12,14 @@ def create_admin_user(
     *,
     phone_number: str,
     password_hash: str,
-    otp_token: str,
+    totp_secret: str,
     commit: bool = True,
 ) -> AdminUser:
     try:
         admin_user = AdminUser(
-            phone_number=phone_number, password_hash=password_hash, otp_token=otp_token
+            phone_number=phone_number,
+            password_hash=password_hash,
+            totp_secret=totp_secret,
         )
         db.add(admin_user)
         db.flush()

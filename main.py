@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from urllib.parse import urljoin
 from sqlalchemy.orm import Session
 from typing import Optional
+from argon2 import PasswordHasher
 
 from src.routers import auth, health, payment, telegram, bot
 from src.config import settings, logger
@@ -24,10 +25,14 @@ async def lifespan(app: FastAPI):
       - create shared httpx AsyncClient
       - discover or start public URL (webhook or ngrok)
       - set Telegram webhook
+      - seed the db with the default chat outputs
+      - initilize the chat output state machine
+      - initilize the password hasher
     Shutdown:
       - delete Telegram webhook
       - stop ngrok if we started it
       - close AsyncClient
+      TODO make a gracefull shutdown for all the other startup items as well
     """
     # 1) shared HTTP client
     app.state.http = httpx.AsyncClient()
@@ -64,6 +69,7 @@ async def lifespan(app: FastAPI):
         if using_ngrok:
             stop_ngrok_tunnel()
         raise RuntimeError(f"Failed to set Telegram webhook: {e}") from e
+
     try:
         db: Session = SessionLocal()
         seed_initial_products(db)
@@ -71,10 +77,25 @@ async def lifespan(app: FastAPI):
         db.close()
     except Exception as e:
         logger.error(f"Database seeding failed: {e}")
+        raise
     # ---- hand control to the app ----
 
     # ----- init of the telegram chat outputs----#
-    app.state.outputs = TelegrambotOutputs()
+    try:
+        app.state.outputs = TelegrambotOutputs()
+    except Exception as e:
+        logger.error(f"failed to initilize the bot outputs at the lifecycle: {e}")
+
+    # ----- init of the password hasher----#
+    try:
+        app.state.ph = PasswordHasher(
+            time_cost=3,  # iterations
+            memory_cost=65536,  # 64 MB
+            parallelism=2,
+        )
+    except Exception as e:
+        logger.error(f"failed to intilize the password hasher: {e}")
+
     try:
         yield
     finally:

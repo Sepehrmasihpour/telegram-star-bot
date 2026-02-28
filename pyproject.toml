@@ -18,6 +18,9 @@ uvicorn = "^0.38.0"
 sqlalchemy = "^2.0.44"
 psycopg = {extras = ["binary"], version = "^3.2.12"}
 python-multipart = "^0.0.21"
+argon2-cffi = "^25.1.0"
+pyotp = "^2.9.0"
+pyjwt = "^2.11.0"
 
 
 [tool.poetry.group.dev.dependencies]

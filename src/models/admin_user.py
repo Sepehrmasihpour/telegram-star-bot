@@ -21,4 +21,4 @@ class AdminUser(Base):
     full_nane: Mapped[str] = mapped_column(String(200), nullable=False)
 
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    otp_token: Mapped[str] = mapped_column(String(255), nullable=False)
+    totp_secret: Mapped[str] = mapped_column(String(255), nullable=False)

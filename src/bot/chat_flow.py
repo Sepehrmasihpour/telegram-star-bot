@@ -1,4 +1,3 @@
-import re
 from typing import Dict, Any, Optional, Union
 from urllib.parse import urlencode
 from decimal import Decimal
@@ -17,9 +16,8 @@ from src.crud import user
 from src.config import logger
 from src.config import settings
 
+from src.core.validators import is_valid_iranian_phone
 from src.services.pricing import get_version_price
-
-_PHONE_PATTERN = re.compile(r"^09\d{9}$")
 
 
 def chat_first_level_authentication(
@@ -135,7 +133,7 @@ def phone_number_input(
     outputs: TelegrambotOutputs, db: Session, phone_number: str, chat_data: Chat
 ):
     try:
-        valid_phone_number = phone_number_authenticator(phone_number)
+        valid_phone_number = is_valid_iranian_phone(phone_number)
         if not valid_phone_number:
             attempts = chat_data.phone_input_attempt
             if attempts >= 2:
@@ -221,7 +219,6 @@ def otp_verify(outputs: TelegrambotOutputs, db: Session, text: str, chat: Chat):
 
 
 def is_last_message(
-    outputs: TelegrambotOutputs,
     message_id: Union[str, int],
     db: Session,
     chat: Optional[Chat] = None,
@@ -334,7 +331,3 @@ def get_product_prices(db: Session, product: Product) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"get_product_prices at services failed:{e}")
         raise
-
-
-def phone_number_authenticator(phone: str) -> bool:
-    return bool(_PHONE_PATTERN.match(phone))
